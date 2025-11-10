@@ -4,8 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Sparkles, PartyPopper, Calendar } from "lucide-react";
+import { Sparkles, PartyPopper, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Role {
   name: string;
@@ -39,24 +40,63 @@ const CELEBRATION_MESSAGES = [
 ];
 
 export default function WeeklyPlanner() {
+  const [allWeeksData, setAllWeeksData] = useState<Record<string, WeekData>>(() => {
+    const saved = localStorage.getItem("weeklyPlannerAll");
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const [currentWeekStart, setCurrentWeekStart] = useState<string>(() => {
+    return getMonday(new Date()).toISOString().split("T")[0];
+  });
+
   const [weekData, setWeekData] = useState<WeekData>(() => {
-    const saved = localStorage.getItem("weeklyPlanner");
-    if (saved) {
-      return JSON.parse(saved);
+    const weekKey = getMonday(new Date()).toISOString().split("T")[0];
+    if (allWeeksData[weekKey]) {
+      return allWeeksData[weekKey];
     }
     return {
       roles: Array(10).fill(null).map(() => ({ name: "", goal: "" })),
       notes: "",
       tasks: [],
-      weekStart: getMonday(new Date()).toISOString().split("T")[0],
+      weekStart: weekKey,
     };
   });
 
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showYearReview, setShowYearReview] = useState(false);
+  const [yearReviewAnswers, setYearReviewAnswers] = useState({
+    achievements: "",
+    challenges: "",
+    lessons: "",
+    gratitude: "",
+    nextYearGoals: "",
+  });
 
   useEffect(() => {
-    localStorage.setItem("weeklyPlanner", JSON.stringify(weekData));
-  }, [weekData]);
+    const updatedAllWeeks = { ...allWeeksData, [currentWeekStart]: weekData };
+    setAllWeeksData(updatedAllWeeks);
+    localStorage.setItem("weeklyPlannerAll", JSON.stringify(updatedAllWeeks));
+  }, [weekData, currentWeekStart]);
+
+  useEffect(() => {
+    const checkYearEnd = () => {
+      const today = new Date();
+      const month = today.getMonth() + 1;
+      const day = today.getDate();
+      
+      if ((month === 12 && day >= 1) || (month === 1 && day <= 31)) {
+        const lastShown = localStorage.getItem("lastYearReviewShown");
+        const currentYear = today.getFullYear();
+        
+        if (!lastShown || lastShown !== currentYear.toString()) {
+          setShowYearReview(true);
+          localStorage.setItem("lastYearReviewShown", currentYear.toString());
+        }
+      }
+    };
+    
+    checkYearEnd();
+  }, []);
 
   function getMonday(date: Date) {
     const day = date.getDay();
@@ -65,7 +105,7 @@ export default function WeeklyPlanner() {
   }
 
   function getWeekRange() {
-    const start = new Date(weekData.weekStart);
+    const start = new Date(currentWeekStart);
     const end = new Date(start);
     end.setDate(end.getDate() + 6);
     
@@ -75,6 +115,26 @@ export default function WeeklyPlanner() {
     
     return `${formatDate(start)} - ${formatDate(end)}`;
   }
+
+  const navigateWeek = (direction: "prev" | "next") => {
+    const current = new Date(currentWeekStart);
+    const newDate = new Date(current);
+    newDate.setDate(current.getDate() + (direction === "next" ? 7 : -7));
+    const newWeekStart = getMonday(newDate).toISOString().split("T")[0];
+    
+    setCurrentWeekStart(newWeekStart);
+    
+    if (allWeeksData[newWeekStart]) {
+      setWeekData(allWeeksData[newWeekStart]);
+    } else {
+      setWeekData({
+        roles: Array(10).fill(null).map(() => ({ name: "", goal: "" })),
+        notes: "",
+        tasks: [],
+        weekStart: newWeekStart,
+      });
+    }
+  };
 
   const updateRole = (index: number, field: "name" | "goal", value: string) => {
     const newRoles = [...weekData.roles];
@@ -148,9 +208,27 @@ export default function WeeklyPlanner() {
             <Sparkles className="w-5 h-5" />
           </div>
           
-          <div className="flex items-center justify-center gap-2 text-2xl font-bold text-foreground">
-            <Calendar className="w-6 h-6 text-coral" />
-            <span>Week of: {getWeekRange()}</span>
+          <div className="flex items-center justify-center gap-4 text-2xl font-bold text-foreground">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigateWeek("prev")}
+              className="hover:bg-coral/20"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </Button>
+            <div className="flex items-center gap-2">
+              <Calendar className="w-6 h-6 text-coral" />
+              <span>Week of: {getWeekRange()}</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigateWeek("next")}
+              className="hover:bg-coral/20"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </Button>
           </div>
           
           {totalTasksCount > 0 && (
@@ -171,108 +249,106 @@ export default function WeeklyPlanner() {
 
         {/* Main Planner Grid */}
         <Card className="overflow-x-auto shadow-lg">
-          <div className="min-w-[1200px]">
-            {/* Header Row */}
-            <div className="grid grid-cols-[200px_250px_1fr_150px_repeat(7,150px)] border-b-2 border-border bg-gradient-to-r from-lavender/30 to-peach/30">
-              <div className="p-3 font-bold text-sm border-r border-border">Role</div>
-              <div className="p-3 font-bold text-sm border-r border-border">Weekly Goals</div>
-              <div className="w-4 border-r border-border"></div>
-              <div className="p-3 font-bold text-sm border-r border-border">Notes</div>
-              {DAYS.map((day) => (
-                <div key={day} className="p-3 font-bold text-sm text-center border-r border-border last:border-r-0">
-                  {day}
+          <div className="min-w-[1400px]">
+            <div className="grid grid-cols-[200px_250px_1fr_repeat(7,150px)] gap-0">
+              {/* Header Row */}
+              <div className="col-span-12 grid grid-cols-[200px_250px_1fr_repeat(7,150px)] border-b-2 border-border bg-gradient-to-r from-lavender/30 to-peach/30">
+                <div className="p-3 font-bold text-sm border-r border-border">Role</div>
+                <div className="p-3 font-bold text-sm border-r border-border">Weekly Goals</div>
+                <div className="p-3 font-bold text-sm border-r border-border">Notes</div>
+                {DAYS.map((day) => (
+                  <div key={day} className="p-3 font-bold text-sm text-center border-r border-border last:border-r-0">
+                    {day}
+                  </div>
+                ))}
+              </div>
+
+              {/* Role Rows */}
+              {weekData.roles.map((role, roleIndex) => (
+                <div
+                  key={roleIndex}
+                  className="col-span-12 grid grid-cols-[200px_250px_1fr_repeat(7,150px)] border-b border-border hover:bg-muted/30 transition-colors"
+                  style={{
+                    backgroundColor: roleIndex % 5 === 0 ? 'hsl(var(--sky) / 0.1)' :
+                                   roleIndex % 5 === 1 ? 'hsl(var(--lavender) / 0.1)' :
+                                   roleIndex % 5 === 2 ? 'hsl(var(--peach) / 0.1)' :
+                                   roleIndex % 5 === 3 ? 'hsl(var(--coral) / 0.1)' :
+                                   'hsl(var(--mint) / 0.1)'
+                  }}
+                >
+                  {/* Role Name */}
+                  <div className="p-2 border-r border-border">
+                    <Input
+                      value={role.name}
+                      onChange={(e) => updateRole(roleIndex, "name", e.target.value)}
+                      placeholder={`Role ${roleIndex + 1}`}
+                      className="h-8 bg-card/50 border-border/50"
+                    />
+                  </div>
+
+                  {/* Weekly Goal */}
+                  <div className="p-2 border-r border-border">
+                    <Textarea
+                      value={role.goal}
+                      onChange={(e) => updateRole(roleIndex, "goal", e.target.value)}
+                      placeholder="What do you want to achieve?"
+                      className="min-h-[60px] bg-card/50 border-border/50 resize-none"
+                    />
+                  </div>
+
+                  {/* Notes (shared for first row, empty for others) */}
+                  {roleIndex === 0 ? (
+                    <div className="p-2 border-r border-border row-span-10">
+                      <Textarea
+                        value={weekData.notes}
+                        onChange={(e) => setWeekData({ ...weekData, notes: e.target.value })}
+                        placeholder="Weekly notes..."
+                        className="h-full min-h-[600px] bg-card/50 border-border/50 resize-none"
+                      />
+                    </div>
+                  ) : (
+                    <div className="border-r border-border"></div>
+                  )}
+
+                  {/* Daily Tasks */}
+                  {DAYS.map((day) => {
+                    const tasks = getTasksForRoleAndDay(roleIndex, day);
+                    return (
+                      <div key={day} className="p-2 border-r border-border last:border-r-0 space-y-2">
+                        {tasks.map((task) => (
+                          <div key={task.id} className="flex items-start gap-2 group">
+                            <Checkbox
+                              checked={task.completed}
+                              onCheckedChange={() => toggleTask(task.id)}
+                              className="mt-1"
+                            />
+                            <Input
+                              value={task.text}
+                              onChange={(e) => updateTask(task.id, e.target.value)}
+                              placeholder="Task..."
+                              className={`h-8 flex-1 text-xs bg-card/50 ${task.completed ? 'line-through opacity-60' : ''}`}
+                              onKeyDown={(e) => {
+                                if (e.key === "Delete" && e.ctrlKey) {
+                                  deleteTask(task.id);
+                                }
+                              }}
+                            />
+                          </div>
+                        ))}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => addTask(roleIndex, day)}
+                          className="w-full h-7 text-xs hover:bg-primary/10 hover:text-primary"
+                        >
+                          + Add task
+                        </Button>
+                      </div>
+                    );
+                  })}
                 </div>
               ))}
             </div>
-
-            {/* Role Rows */}
-            {weekData.roles.map((role, roleIndex) => (
-              <div
-                key={roleIndex}
-                className="grid grid-cols-[200px_250px_1fr_150px_repeat(7,150px)] border-b border-border hover:bg-muted/30 transition-colors"
-                style={{
-                  backgroundColor: roleIndex % 5 === 0 ? 'hsl(var(--sky) / 0.1)' :
-                                 roleIndex % 5 === 1 ? 'hsl(var(--lavender) / 0.1)' :
-                                 roleIndex % 5 === 2 ? 'hsl(var(--peach) / 0.1)' :
-                                 roleIndex % 5 === 3 ? 'hsl(var(--coral) / 0.1)' :
-                                 'hsl(var(--mint) / 0.1)'
-                }}
-              >
-                {/* Role Name */}
-                <div className="p-2 border-r border-border">
-                  <Input
-                    value={role.name}
-                    onChange={(e) => updateRole(roleIndex, "name", e.target.value)}
-                    placeholder={`Role ${roleIndex + 1}`}
-                    className="h-8 bg-card/50 border-border/50"
-                  />
-                </div>
-
-                {/* Weekly Goal */}
-                <div className="p-2 border-r border-border">
-                  <Textarea
-                    value={role.goal}
-                    onChange={(e) => updateRole(roleIndex, "goal", e.target.value)}
-                    placeholder="What do you want to achieve?"
-                    className="min-h-[60px] bg-card/50 border-border/50 resize-none"
-                  />
-                </div>
-
-                {/* Spacer */}
-                <div className="border-r border-border"></div>
-
-                {/* Notes (only show in first row) */}
-                {roleIndex === 0 ? (
-                  <div className="p-2 border-r border-border row-span-10">
-                    <Textarea
-                      value={weekData.notes}
-                      onChange={(e) => setWeekData({ ...weekData, notes: e.target.value })}
-                      placeholder="Weekly notes..."
-                      className="h-full min-h-[400px] bg-card/50 border-border/50 resize-none"
-                    />
-                  </div>
-                ) : (
-                  <div className="border-r border-border"></div>
-                )}
-
-                {/* Daily Tasks */}
-                {DAYS.map((day) => {
-                  const tasks = getTasksForRoleAndDay(roleIndex, day);
-                  return (
-                    <div key={day} className="p-2 border-r border-border last:border-r-0 space-y-2">
-                      {tasks.map((task) => (
-                        <div key={task.id} className="flex items-start gap-2 group">
-                          <Checkbox
-                            checked={task.completed}
-                            onCheckedChange={() => toggleTask(task.id)}
-                            className="mt-1"
-                          />
-                          <Input
-                            value={task.text}
-                            onChange={(e) => updateTask(task.id, e.target.value)}
-                            placeholder="Task..."
-                            className={`h-8 flex-1 text-xs bg-card/50 ${task.completed ? 'line-through opacity-60' : ''}`}
-                            onKeyDown={(e) => {
-                              if (e.key === "Delete" && e.ctrlKey) {
-                                deleteTask(task.id);
-                              }
-                            }}
-                          />
-                        </div>
-                      ))}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => addTask(roleIndex, day)}
-                        className="w-full h-7 text-xs hover:bg-primary/10 hover:text-primary"
-                      >
-                        + Add task
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
           </div>
         </Card>
 
@@ -289,6 +365,96 @@ export default function WeeklyPlanner() {
           <PartyPopper className="w-32 h-32 text-coral animate-celebration drop-shadow-2xl" />
         </div>
       )}
+
+      {/* Year Review Dialog */}
+      <Dialog open={showYearReview} onOpenChange={setShowYearReview}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center bg-gradient-to-r from-coral to-peach bg-clip-text text-transparent">
+              ✨ Time for Reflection & New Beginnings ✨
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            <p className="text-center text-muted-foreground italic">
+              "The future depends on what you do today. Take a moment to celebrate your journey and dream about tomorrow."
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="font-semibold text-coral block mb-2">
+                  🌟 What are you most proud of this year?
+                </label>
+                <Textarea
+                  value={yearReviewAnswers.achievements}
+                  onChange={(e) => setYearReviewAnswers({...yearReviewAnswers, achievements: e.target.value})}
+                  placeholder="Reflect on your wins, big and small..."
+                  className="min-h-[80px]"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-lavender block mb-2">
+                  💪 What challenges helped you grow?
+                </label>
+                <Textarea
+                  value={yearReviewAnswers.challenges}
+                  onChange={(e) => setYearReviewAnswers({...yearReviewAnswers, challenges: e.target.value})}
+                  placeholder="Every obstacle is a stepping stone..."
+                  className="min-h-[80px]"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-mint block mb-2">
+                  📚 What lessons will you carry forward?
+                </label>
+                <Textarea
+                  value={yearReviewAnswers.lessons}
+                  onChange={(e) => setYearReviewAnswers({...yearReviewAnswers, lessons: e.target.value})}
+                  placeholder="Wisdom gained from experience..."
+                  className="min-h-[80px]"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-peach block mb-2">
+                  🙏 What are you grateful for?
+                </label>
+                <Textarea
+                  value={yearReviewAnswers.gratitude}
+                  onChange={(e) => setYearReviewAnswers({...yearReviewAnswers, gratitude: e.target.value})}
+                  placeholder="Gratitude opens the door to abundance..."
+                  className="min-h-[80px]"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-sky block mb-2">
+                  🚀 What exciting goals await you next year?
+                </label>
+                <Textarea
+                  value={yearReviewAnswers.nextYearGoals}
+                  onChange={(e) => setYearReviewAnswers({...yearReviewAnswers, nextYearGoals: e.target.value})}
+                  placeholder="Dream big, start small, act now..."
+                  className="min-h-[80px]"
+                />
+              </div>
+            </div>
+
+            <Button
+              onClick={() => {
+                localStorage.setItem("yearReview", JSON.stringify(yearReviewAnswers));
+                toast.success("🎉 Your reflection has been saved! Here's to an amazing year ahead!");
+                setShowYearReview(false);
+              }}
+              className="w-full bg-gradient-to-r from-coral to-peach hover:opacity-90"
+            >
+              Save My Reflection
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
