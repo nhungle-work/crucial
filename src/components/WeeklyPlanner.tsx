@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 interface Role {
   name: string;
   goal: string;
+  note: string;
 }
 
 interface Task {
@@ -23,7 +24,6 @@ interface Task {
 
 interface WeekData {
   roles: Role[];
-  notes: string;
   tasks: Task[];
   weekStart: string;
 }
@@ -55,8 +55,7 @@ export default function WeeklyPlanner() {
       return allWeeksData[weekKey];
     }
     return {
-      roles: Array(10).fill(null).map(() => ({ name: "", goal: "" })),
-      notes: "",
+      roles: Array(10).fill(null).map(() => ({ name: "", goal: "", note: "" })),
       tasks: [],
       weekStart: weekKey,
     };
@@ -128,15 +127,14 @@ export default function WeeklyPlanner() {
       setWeekData(allWeeksData[newWeekStart]);
     } else {
       setWeekData({
-        roles: Array(10).fill(null).map(() => ({ name: "", goal: "" })),
-        notes: "",
+        roles: Array(10).fill(null).map(() => ({ name: "", goal: "", note: "" })),
         tasks: [],
         weekStart: newWeekStart,
       });
     }
   };
 
-  const updateRole = (index: number, field: "name" | "goal", value: string) => {
+  const updateRole = (index: number, field: "name" | "goal" | "note", value: string) => {
     const newRoles = [...weekData.roles];
     newRoles[index] = { ...newRoles[index], [field]: value };
     setWeekData({ ...weekData, roles: newRoles });
@@ -262,18 +260,8 @@ export default function WeeklyPlanner() {
               ))}
             </div>
 
+            {/* Role Rows */}
             <div className="grid grid-cols-[200px_250px_150px_repeat(7,150px)]">
-              {/* Notes Column - Spans all rows */}
-              <div className="col-start-3 row-start-1 row-span-10 border-r border-border p-2 bg-card/30">
-                <Textarea
-                  value={weekData.notes}
-                  onChange={(e) => setWeekData({ ...weekData, notes: e.target.value })}
-                  placeholder="Weekly notes..."
-                  className="h-full min-h-[600px] w-full bg-card/50 border-border/50 resize-none"
-                />
-              </div>
-
-              {/* Role Rows */}
               {weekData.roles.map((role, roleIndex) => (
                 <>
                   {/* Role Name */}
@@ -312,6 +300,26 @@ export default function WeeklyPlanner() {
                       value={role.goal}
                       onChange={(e) => updateRole(roleIndex, "goal", e.target.value)}
                       placeholder="What do you want to achieve?"
+                      className="min-h-[60px] bg-card/50 border-border/50 resize-none"
+                    />
+                  </div>
+
+                  {/* Notes */}
+                  <div
+                    key={`note-${roleIndex}`}
+                    className="p-2 border-r border-b border-border"
+                    style={{
+                      backgroundColor: roleIndex % 5 === 0 ? 'hsl(var(--sky) / 0.1)' :
+                                     roleIndex % 5 === 1 ? 'hsl(var(--lavender) / 0.1)' :
+                                     roleIndex % 5 === 2 ? 'hsl(var(--peach) / 0.1)' :
+                                     roleIndex % 5 === 3 ? 'hsl(var(--coral) / 0.1)' :
+                                     'hsl(var(--mint) / 0.1)'
+                    }}
+                  >
+                    <Textarea
+                      value={role.note}
+                      onChange={(e) => updateRole(roleIndex, "note", e.target.value)}
+                      placeholder="Notes for this role..."
                       className="min-h-[60px] bg-card/50 border-border/50 resize-none"
                     />
                   </div>
