@@ -280,6 +280,10 @@ export default function WeeklyPlanner() {
             </Button>
           </div>
           
+          <p className="text-sm text-muted-foreground italic mt-2">
+            Keep important things important
+          </p>
+          
           {totalTasksCount > 0 && (
             <div className="max-w-md mx-auto">
               <div className="flex justify-between text-sm text-muted-foreground mb-2">
