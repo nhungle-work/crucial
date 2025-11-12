@@ -48,7 +48,15 @@ export default function Index() {
 
   return (
     <div>
-      <div className="absolute top-4 right-4 z-10">
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
+        <div className="flex flex-col items-end text-sm">
+          <span className="font-semibold text-foreground">
+            {session.user.user_metadata?.username || session.user.email?.split('@')[0]}
+          </span>
+          <span className="text-muted-foreground text-xs">
+            {session.user.email}
+          </span>
+        </div>
         <Button variant="outline" onClick={handleLogout}>
           Logout
         </Button>

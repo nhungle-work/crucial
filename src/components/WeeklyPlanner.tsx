@@ -55,7 +55,7 @@ export default function WeeklyPlanner() {
       return allWeeksData[weekKey];
     }
     return {
-      roles: Array(10).fill(null).map(() => ({ name: "", goal: "", note: "" })),
+      roles: Array(7).fill(null).map(() => ({ name: "", goal: "", note: "" })),
       tasks: [],
       weekStart: weekKey,
     };
@@ -127,7 +127,7 @@ export default function WeeklyPlanner() {
       setWeekData(allWeeksData[newWeekStart]);
     } else {
       setWeekData({
-        roles: Array(10).fill(null).map(() => ({ name: "", goal: "", note: "" })),
+        roles: Array(7).fill(null).map(() => ({ name: "", goal: "", note: "" })),
         tasks: [],
         weekStart: newWeekStart,
       });
@@ -340,23 +340,26 @@ export default function WeeklyPlanner() {
                         }}
                       >
                         {tasks.map((task) => (
-                          <div key={task.id} className="flex items-start gap-2 group">
+                          <div key={task.id} className="flex items-start gap-1 group">
                             <Checkbox
                               checked={task.completed}
                               onCheckedChange={() => toggleTask(task.id)}
-                              className="mt-1"
+                              className="mt-1 flex-shrink-0"
                             />
                             <Input
                               value={task.text}
                               onChange={(e) => updateTask(task.id, e.target.value)}
                               placeholder="Task..."
                               className={`h-8 flex-1 text-xs bg-card/50 ${task.completed ? 'line-through opacity-60' : ''}`}
-                              onKeyDown={(e) => {
-                                if (e.key === "Delete" && e.ctrlKey) {
-                                  deleteTask(task.id);
-                                }
-                              }}
                             />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => deleteTask(task.id)}
+                              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive flex-shrink-0"
+                            >
+                              <span className="text-base">×</span>
+                            </Button>
                           </div>
                         ))}
                         <Button
@@ -378,7 +381,7 @@ export default function WeeklyPlanner() {
 
         {/* Footer Tips */}
         <div className="text-center text-sm text-muted-foreground space-y-2 animate-fade-in">
-          <p>💡 Tip: Press Ctrl+Delete on a task to remove it</p>
+          <p>💡 Tip: Hover over a task to see the delete button</p>
           <p>🎯 Plan your week by roles to maintain balance in all areas of life</p>
         </div>
       </div>
