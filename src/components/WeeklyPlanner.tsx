@@ -106,6 +106,38 @@ export default function WeeklyPlanner() {
     checkYearEnd();
   }, []);
 
+  // One-time migration: ensure all weeks have max 7 roles
+  useEffect(() => {
+    let modified = false;
+    const updated: Record<string, WeekData> = {} as any;
+    for (const [key, data] of Object.entries(allWeeksData)) {
+      const d = data as WeekData;
+      if (d.roles.length > 7) {
+        modified = true;
+        updated[key] = {
+          ...d,
+          roles: d.roles.slice(0, 7),
+          tasks: d.tasks.filter((t) => t.roleIndex < 7),
+        };
+      } else {
+        updated[key] = d;
+      }
+    }
+    if (modified) {
+      setAllWeeksData(updated);
+      localStorage.setItem("weeklyPlannerAll", JSON.stringify(updated));
+      if (weekData.roles.length > 7) {
+        setWeekData({
+          ...weekData,
+          roles: weekData.roles.slice(0, 7),
+          tasks: weekData.tasks.filter((t) => t.roleIndex < 7),
+        });
+      }
+    }
+    // run only once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function getMonday(date: Date) {
     const day = date.getDay();
     const diff = date.getDate() - day + (day === 0 ? -6 : 1);

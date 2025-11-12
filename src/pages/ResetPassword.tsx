@@ -31,20 +31,22 @@ export default function ResetPassword() {
   const [isValidSession, setIsValidSession] = useState(false);
 
   useEffect(() => {
-    // Check if user came from a valid reset link
+    // Set up listener FIRST so Supabase can process hash tokens
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" || session) {
+        setIsValidSession(true);
+      }
+    });
+
+    // Then check for existing session (in case tokens already processed)
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setIsValidSession(true);
-      } else {
-        toast({
-          title: "Invalid reset link",
-          description: "Please request a new password reset link.",
-          variant: "destructive",
-        });
-        navigate("/auth");
       }
     });
-  }, [navigate, toast]);
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,7 +93,21 @@ export default function ResetPassword() {
   };
 
   if (!isValidSession) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">Verifying reset link…</CardTitle>
+            <CardDescription className="text-center">
+              If this takes more than a few seconds, the link may be invalid or expired. Please request a new one.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" className="w-full" onClick={() => navigate('/auth')}>Back to Login</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
