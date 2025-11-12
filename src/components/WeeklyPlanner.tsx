@@ -52,7 +52,16 @@ export default function WeeklyPlanner() {
   const [weekData, setWeekData] = useState<WeekData>(() => {
     const weekKey = getMonday(new Date()).toISOString().split("T")[0];
     if (allWeeksData[weekKey]) {
-      return allWeeksData[weekKey];
+      // Migrate old data with 10 roles to 7 roles
+      const data = allWeeksData[weekKey];
+      if (data.roles.length > 7) {
+        return {
+          ...data,
+          roles: data.roles.slice(0, 7),
+          tasks: data.tasks.filter(t => t.roleIndex < 7),
+        };
+      }
+      return data;
     }
     return {
       roles: Array(7).fill(null).map(() => ({ name: "", goal: "", note: "" })),
@@ -124,7 +133,17 @@ export default function WeeklyPlanner() {
     setCurrentWeekStart(newWeekStart);
     
     if (allWeeksData[newWeekStart]) {
-      setWeekData(allWeeksData[newWeekStart]);
+      // Migrate old data with 10 roles to 7 roles
+      const data = allWeeksData[newWeekStart];
+      if (data.roles.length > 7) {
+        setWeekData({
+          ...data,
+          roles: data.roles.slice(0, 7),
+          tasks: data.tasks.filter(t => t.roleIndex < 7),
+        });
+      } else {
+        setWeekData(data);
+      }
     } else {
       setWeekData({
         roles: Array(7).fill(null).map(() => ({ name: "", goal: "", note: "" })),
