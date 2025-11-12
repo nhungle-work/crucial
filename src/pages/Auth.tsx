@@ -21,7 +21,7 @@ const signupSchema = z.object({
 });
 
 const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  emailOrUsername: z.string().min(1, "Email or username is required"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -40,7 +40,7 @@ export default function Auth() {
 
   // Login form state
   const [loginData, setLoginData] = useState({
-    email: "",
+    emailOrUsername: "",
     password: "",
   });
   const [loginErrors, setLoginErrors] = useState<Record<string, string>>({});
@@ -59,6 +59,28 @@ export default function Auth() {
       signupSchema.parse(signupData);
       
       setLoading(true);
+      
+      // Check if username already exists
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', signupData.username)
+        .maybeSingle();
+      
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
+      
+      if (existingProfile) {
+        toast({
+          title: "Username taken",
+          description: "This username is already taken. Please choose another one.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+      
       const { error } = await supabase.auth.signUp({
         email: signupData.email,
         password: signupData.password,
@@ -119,8 +141,34 @@ export default function Auth() {
       loginSchema.parse(loginData);
       
       setLoading(true);
+      
+      // Determine if input is email or username
+      const input = loginData.emailOrUsername.trim();
+      let emailToUse = input;
+      
+      // If input is not in email format, treat as username and look up email
+      if (!input.includes('@')) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('username', input)
+          .maybeSingle();
+        
+        if (profileError || !profile) {
+          toast({
+            title: "Invalid credentials",
+            description: "Username or password is incorrect.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+        
+        emailToUse = profile.email;
+      }
+      
       const { error } = await supabase.auth.signInWithPassword({
-        email: loginData.email,
+        email: emailToUse,
         password: loginData.password,
       });
 
@@ -225,17 +273,17 @@ export default function Auth() {
               {!showForgotPassword ? (
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
+                    <Label htmlFor="login-email">Email or Username</Label>
                     <Input
                       id="login-email"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={loginData.email}
-                      onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                      type="text"
+                      placeholder="your@email.com or username"
+                      value={loginData.emailOrUsername}
+                      onChange={(e) => setLoginData({ ...loginData, emailOrUsername: e.target.value })}
                       required
                     />
-                    {loginErrors.email && (
-                      <p className="text-sm text-destructive">{loginErrors.email}</p>
+                    {loginErrors.emailOrUsername && (
+                      <p className="text-sm text-destructive">{loginErrors.emailOrUsername}</p>
                     )}
                   </div>
                   
