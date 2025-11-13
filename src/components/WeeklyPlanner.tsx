@@ -63,8 +63,27 @@ export default function WeeklyPlanner() {
       }
       return data;
     }
+    
+    // New week: try to copy roles from previous week
+    const targetDate = new Date(weekKey);
+    const allDates = Object.keys(allWeeksData)
+      .map(key => new Date(key))
+      .filter(date => date < targetDate)
+      .sort((a, b) => b.getTime() - a.getTime());
+    
+    let roles = Array(7).fill(null).map(() => ({ name: "", goal: "", note: "" }));
+    if (allDates.length > 0) {
+      const previousWeekKey = allDates[0].toISOString().split("T")[0];
+      const previousWeekData = allWeeksData[previousWeekKey];
+      roles = previousWeekData.roles.map(role => ({
+        name: role.name,
+        goal: role.goal,
+        note: role.note,
+      }));
+    }
+    
     return {
-      roles: Array(7).fill(null).map(() => ({ name: "", goal: "", note: "" })),
+      roles,
       tasks: [],
       weekStart: weekKey,
     };
@@ -157,6 +176,29 @@ export default function WeeklyPlanner() {
     return `${formatDate(start)} - ${formatDate(end)}`;
   }
 
+  function getPreviousWeekRoles(targetWeekStart: string): Role[] {
+    // Find the most recent week before targetWeekStart that has roles
+    const targetDate = new Date(targetWeekStart);
+    const allDates = Object.keys(allWeeksData)
+      .map(key => new Date(key))
+      .filter(date => date < targetDate)
+      .sort((a, b) => b.getTime() - a.getTime()); // Sort descending
+    
+    if (allDates.length === 0) {
+      return Array(7).fill(null).map(() => ({ name: "", goal: "", note: "" }));
+    }
+    
+    const previousWeekKey = allDates[0].toISOString().split("T")[0];
+    const previousWeekData = allWeeksData[previousWeekKey];
+    
+    // Deep copy the roles from previous week
+    return previousWeekData.roles.map(role => ({
+      name: role.name,
+      goal: role.goal,
+      note: role.note,
+    }));
+  }
+
   const navigateWeek = (direction: "prev" | "next") => {
     const current = new Date(currentWeekStart);
     const newDate = new Date(current);
@@ -178,8 +220,10 @@ export default function WeeklyPlanner() {
         setWeekData(data);
       }
     } else {
+      // New week: copy roles from previous week
+      const rolesFromPrevious = getPreviousWeekRoles(newWeekStart);
       setWeekData({
-        roles: Array(7).fill(null).map(() => ({ name: "", goal: "", note: "" })),
+        roles: rolesFromPrevious,
         tasks: [],
         weekStart: newWeekStart,
       });
