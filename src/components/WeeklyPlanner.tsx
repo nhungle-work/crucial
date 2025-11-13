@@ -468,19 +468,20 @@ export default function WeeklyPlanner() {
                       opacity: draggedRole === roleIndex ? 0.5 : 1,
                     }}
                   >
-                    <Textarea
-                      value={role.name}
-                      onChange={(e) => updateRole(roleIndex, "name", e.target.value)}
-                      placeholder={`Role ${roleIndex + 1}`}
-                      className="w-full bg-card/50 border-border/50 resize-none overflow-hidden"
-                      rows={2}
-                      style={{ height: 'auto', minHeight: '48px' }}
-                      onInput={(e) => {
-                        const target = e.target as HTMLTextAreaElement;
-                        target.style.height = 'auto';
-                        target.style.height = target.scrollHeight + 'px';
-                      }}
-                    />
+                  <Textarea
+                    key={`role-name-${roleIndex}-${role.name}`}
+                    value={role.name}
+                    onChange={(e) => updateRole(roleIndex, "name", e.target.value)}
+                    placeholder={`Role ${roleIndex + 1}`}
+                    className="w-full bg-card/50 border-border/50 resize-none overflow-hidden"
+                    rows={2}
+                    style={{ height: 'auto', minHeight: '48px' }}
+                    onInput={(e) => {
+                      const target = e.target as HTMLTextAreaElement;
+                      target.style.height = 'auto';
+                      target.style.height = target.scrollHeight + 'px';
+                    }}
+                  />
                   </div>
 
                   {/* Weekly Goal */}
@@ -499,6 +500,7 @@ export default function WeeklyPlanner() {
                     }}
                   >
                     <Textarea
+                      key={`goal-${roleIndex}-${role.goal}`}
                       value={role.goal}
                       onChange={(e) => updateRole(roleIndex, "goal", e.target.value)}
                       placeholder="What do you want to achieve?"
@@ -529,6 +531,7 @@ export default function WeeklyPlanner() {
                     }}
                   >
                     <Textarea
+                      key={`note-${roleIndex}-${role.note}`}
                       value={role.note}
                       onChange={(e) => updateRole(roleIndex, "note", e.target.value)}
                       placeholder="Notes for this role..."
