@@ -93,7 +93,14 @@ export default function Auth() {
       });
 
       if (error) {
-        if (error.message.includes("already registered")) {
+        // Handle unique constraint violations from database
+        if (error.message.includes("duplicate key") || error.message.includes("unique constraint")) {
+          toast({
+            title: "Username taken",
+            description: "This username is already taken. Please choose another one.",
+            variant: "destructive",
+          });
+        } else if (error.message.includes("already registered")) {
           toast({
             title: "Account already exists",
             description: "This email is already registered. Please login instead.",
