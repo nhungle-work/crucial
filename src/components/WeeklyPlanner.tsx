@@ -64,7 +64,7 @@ export default function WeeklyPlanner() {
       return data;
     }
     
-    // New week: try to copy roles from previous week
+    // New week: try to copy role names only from previous week
     const targetDate = new Date(weekKey);
     const allDates = Object.keys(allWeeksData)
       .map(key => new Date(key))
@@ -77,8 +77,8 @@ export default function WeeklyPlanner() {
       const previousWeekData = allWeeksData[previousWeekKey];
       roles = previousWeekData.roles.map(role => ({
         name: role.name,
-        goal: role.goal,
-        note: role.note,
+        goal: "",
+        note: "",
       }));
     }
     
@@ -191,11 +191,11 @@ export default function WeeklyPlanner() {
     const previousWeekKey = allDates[0].toISOString().split("T")[0];
     const previousWeekData = allWeeksData[previousWeekKey];
     
-    // Deep copy the roles from previous week
+    // Only copy role names, not goals or notes
     return previousWeekData.roles.map(role => ({
       name: role.name,
-      goal: role.goal,
-      note: role.note,
+      goal: "",
+      note: "",
     }));
   }
 
