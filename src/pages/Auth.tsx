@@ -106,8 +106,8 @@ export default function Auth() {
       }
 
       toast({
-        title: "Check your email!",
-        description: "We've sent you a confirmation email. Please verify your email to continue.",
+        title: "Account created!",
+        description: "You can now login with your credentials.",
       });
       
       setSignupData({ username: "", email: "", password: "" });

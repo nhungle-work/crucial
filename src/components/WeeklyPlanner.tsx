@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Sparkles, PartyPopper, Calendar, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react";
+import { Sparkles, PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -79,6 +79,7 @@ export default function WeeklyPlanner() {
     gratitude: "",
     nextYearGoals: "",
   });
+  const [draggedRole, setDraggedRole] = useState<number | null>(null);
 
   useEffect(() => {
     const updatedAllWeeks = { ...allWeeksData, [currentWeekStart]: weekData };
@@ -242,27 +243,47 @@ export default function WeeklyPlanner() {
     return weekData.tasks.filter(t => t.roleIndex === roleIndex && t.day === day);
   };
 
-  const moveRole = (index: number, direction: "up" | "down") => {
-    if (direction === "up" && index === 0) return;
-    if (direction === "down" && index === weekData.roles.length - 1) return;
+  const handleDragStart = (index: number) => {
+    setDraggedRole(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedRole === null || draggedRole === targetIndex) return;
     
     const newRoles = [...weekData.roles];
-    const newIndex = direction === "up" ? index - 1 : index + 1;
-    
-    // Swap roles
-    [newRoles[index], newRoles[newIndex]] = [newRoles[newIndex], newRoles[index]];
+    const draggedItem = newRoles[draggedRole];
+    newRoles.splice(draggedRole, 1);
+    newRoles.splice(targetIndex, 0, draggedItem);
     
     // Update task role indices
     const newTasks = weekData.tasks.map(task => {
-      if (task.roleIndex === index) {
-        return { ...task, roleIndex: newIndex };
-      } else if (task.roleIndex === newIndex) {
-        return { ...task, roleIndex: index };
+      if (task.roleIndex === draggedRole) {
+        return { ...task, roleIndex: targetIndex };
+      } else if (draggedRole < targetIndex) {
+        // Moving down: shift items between old and new position up
+        if (task.roleIndex > draggedRole && task.roleIndex <= targetIndex) {
+          return { ...task, roleIndex: task.roleIndex - 1 };
+        }
+      } else {
+        // Moving up: shift items between new and old position down
+        if (task.roleIndex >= targetIndex && task.roleIndex < draggedRole) {
+          return { ...task, roleIndex: task.roleIndex + 1 };
+        }
       }
       return task;
     });
     
     setWeekData({ ...weekData, roles: newRoles, tasks: newTasks });
+    setDraggedRole(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedRole(null);
   };
 
   const completedTasksCount = weekData.tasks.filter(t => t.completed).length;
@@ -327,7 +348,7 @@ export default function WeeklyPlanner() {
         <Card className="overflow-x-auto shadow-lg">
           <div className="min-w-[1400px]">
             {/* Header Row */}
-            <div className="grid grid-cols-[60px_200px_250px_150px_repeat(7,150px)] border-b-2 border-border bg-gradient-to-r from-lavender/30 to-peach/30">
+            <div className="grid grid-cols-[40px_200px_250px_150px_repeat(7,150px)] border-b-2 border-border bg-gradient-to-r from-lavender/30 to-peach/30">
               <div className="p-3 font-bold text-sm border-r border-border"></div>
               <div className="p-3 font-bold text-sm border-r border-border">Role</div>
               <div className="p-3 font-bold text-sm border-r border-border">Weekly Goals</div>
@@ -340,58 +361,57 @@ export default function WeeklyPlanner() {
             </div>
 
             {/* Role Rows */}
-            <div className="grid grid-cols-[60px_200px_250px_150px_repeat(7,150px)]">
+            <div className="grid grid-cols-[40px_200px_250px_150px_repeat(7,150px)]">
               {weekData.roles.map((role, roleIndex) => (
                 <>
-                  {/* Move buttons */}
+                  {/* Drag handle */}
                   <div
-                    key={`move-${roleIndex}`}
-                    className="p-2 border-r border-b border-border flex flex-col items-center justify-center gap-1"
+                    key={`drag-${roleIndex}`}
+                    className="p-2 border-r border-b border-border flex items-center justify-center cursor-grab active:cursor-grabbing"
+                    draggable
+                    onDragStart={() => handleDragStart(roleIndex)}
+                    onDragOver={(e) => handleDragOver(e, roleIndex)}
+                    onDrop={(e) => handleDrop(e, roleIndex)}
+                    onDragEnd={handleDragEnd}
                     style={{
                       backgroundColor: roleIndex % 5 === 0 ? 'hsl(var(--sky) / 0.1)' :
                                      roleIndex % 5 === 1 ? 'hsl(var(--lavender) / 0.1)' :
                                      roleIndex % 5 === 2 ? 'hsl(var(--peach) / 0.1)' :
                                      roleIndex % 5 === 3 ? 'hsl(var(--coral) / 0.1)' :
-                                     'hsl(var(--mint) / 0.1)'
+                                     'hsl(var(--mint) / 0.1)',
+                      opacity: draggedRole === roleIndex ? 0.5 : 1,
                     }}
                   >
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => moveRole(roleIndex, "up")}
-                      disabled={roleIndex === 0}
-                    >
-                      <ChevronUp className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => moveRole(roleIndex, "down")}
-                      disabled={roleIndex === weekData.roles.length - 1}
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
+                    <GripVertical className="h-5 w-5 text-muted-foreground" />
                   </div>
 
                   {/* Role Name */}
                   <div
                     key={`role-${roleIndex}`}
                     className="p-2 border-r border-b border-border"
+                    onDragOver={(e) => handleDragOver(e, roleIndex)}
+                    onDrop={(e) => handleDrop(e, roleIndex)}
                     style={{
                       backgroundColor: roleIndex % 5 === 0 ? 'hsl(var(--sky) / 0.1)' :
                                      roleIndex % 5 === 1 ? 'hsl(var(--lavender) / 0.1)' :
                                      roleIndex % 5 === 2 ? 'hsl(var(--peach) / 0.1)' :
                                      roleIndex % 5 === 3 ? 'hsl(var(--coral) / 0.1)' :
-                                     'hsl(var(--mint) / 0.1)'
+                                     'hsl(var(--mint) / 0.1)',
+                      opacity: draggedRole === roleIndex ? 0.5 : 1,
                     }}
                   >
                     <Textarea
                       value={role.name}
                       onChange={(e) => updateRole(roleIndex, "name", e.target.value)}
                       placeholder={`Role ${roleIndex + 1}`}
-                      className="min-h-[60px] bg-card/50 border-border/50 resize-none"
+                      className="w-full bg-card/50 border-border/50 resize-none overflow-hidden"
+                      rows={2}
+                      style={{ height: 'auto', minHeight: '48px' }}
+                      onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = 'auto';
+                        target.style.height = target.scrollHeight + 'px';
+                      }}
                     />
                   </div>
 
@@ -399,19 +419,29 @@ export default function WeeklyPlanner() {
                   <div
                     key={`goal-${roleIndex}`}
                     className="p-2 border-r border-b border-border"
+                    onDragOver={(e) => handleDragOver(e, roleIndex)}
+                    onDrop={(e) => handleDrop(e, roleIndex)}
                     style={{
                       backgroundColor: roleIndex % 5 === 0 ? 'hsl(var(--sky) / 0.1)' :
                                      roleIndex % 5 === 1 ? 'hsl(var(--lavender) / 0.1)' :
                                      roleIndex % 5 === 2 ? 'hsl(var(--peach) / 0.1)' :
                                      roleIndex % 5 === 3 ? 'hsl(var(--coral) / 0.1)' :
-                                     'hsl(var(--mint) / 0.1)'
+                                     'hsl(var(--mint) / 0.1)',
+                      opacity: draggedRole === roleIndex ? 0.5 : 1,
                     }}
                   >
                     <Textarea
                       value={role.goal}
                       onChange={(e) => updateRole(roleIndex, "goal", e.target.value)}
                       placeholder="What do you want to achieve?"
-                      className="min-h-[60px] bg-card/50 border-border/50 resize-none"
+                      className="w-full bg-card/50 border-border/50 resize-none overflow-hidden"
+                      rows={2}
+                      style={{ height: 'auto', minHeight: '48px' }}
+                      onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = 'auto';
+                        target.style.height = target.scrollHeight + 'px';
+                      }}
                     />
                   </div>
 
@@ -419,19 +449,29 @@ export default function WeeklyPlanner() {
                   <div
                     key={`note-${roleIndex}`}
                     className="p-2 border-r border-b border-border"
+                    onDragOver={(e) => handleDragOver(e, roleIndex)}
+                    onDrop={(e) => handleDrop(e, roleIndex)}
                     style={{
                       backgroundColor: roleIndex % 5 === 0 ? 'hsl(var(--sky) / 0.1)' :
                                      roleIndex % 5 === 1 ? 'hsl(var(--lavender) / 0.1)' :
                                      roleIndex % 5 === 2 ? 'hsl(var(--peach) / 0.1)' :
                                      roleIndex % 5 === 3 ? 'hsl(var(--coral) / 0.1)' :
-                                     'hsl(var(--mint) / 0.1)'
+                                     'hsl(var(--mint) / 0.1)',
+                      opacity: draggedRole === roleIndex ? 0.5 : 1,
                     }}
                   >
                     <Textarea
                       value={role.note}
                       onChange={(e) => updateRole(roleIndex, "note", e.target.value)}
                       placeholder="Notes for this role..."
-                      className="min-h-[60px] bg-card/50 border-border/50 resize-none"
+                      className="w-full bg-card/50 border-border/50 resize-none overflow-hidden"
+                      rows={2}
+                      style={{ height: 'auto', minHeight: '48px' }}
+                      onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = 'auto';
+                        target.style.height = target.scrollHeight + 'px';
+                      }}
                     />
                   </div>
 
@@ -442,12 +482,15 @@ export default function WeeklyPlanner() {
                       <div
                         key={`${roleIndex}-${day}`}
                         className="p-2 border-r border-b border-border last:border-r-0 space-y-2"
+                        onDragOver={(e) => handleDragOver(e, roleIndex)}
+                        onDrop={(e) => handleDrop(e, roleIndex)}
                         style={{
                           backgroundColor: roleIndex % 5 === 0 ? 'hsl(var(--sky) / 0.1)' :
                                          roleIndex % 5 === 1 ? 'hsl(var(--lavender) / 0.1)' :
                                          roleIndex % 5 === 2 ? 'hsl(var(--peach) / 0.1)' :
                                          roleIndex % 5 === 3 ? 'hsl(var(--coral) / 0.1)' :
-                                         'hsl(var(--mint) / 0.1)'
+                                         'hsl(var(--mint) / 0.1)',
+                          opacity: draggedRole === roleIndex ? 0.5 : 1,
                         }}
                       >
                         {tasks.map((task) => (
@@ -461,15 +504,22 @@ export default function WeeklyPlanner() {
                               value={task.text}
                               onChange={(e) => updateTask(task.id, e.target.value)}
                               placeholder="Task..."
-                              className={`min-h-[32px] flex-1 text-xs bg-card/50 resize-none ${task.completed ? 'line-through opacity-60' : ''}`}
+                              className={`flex-1 text-xs bg-card/50 resize-none overflow-hidden ${task.completed ? 'line-through opacity-60' : ''}`}
+                              rows={1}
+                              style={{ height: 'auto', minHeight: '32px' }}
+                              onInput={(e) => {
+                                const target = e.target as HTMLTextAreaElement;
+                                target.style.height = 'auto';
+                                target.style.height = target.scrollHeight + 'px';
+                              }}
                             />
                             <Button
                               variant="ghost"
                               size="icon"
                               onClick={() => deleteTask(task.id)}
-                              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive flex-shrink-0"
+                              className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive flex-shrink-0"
                             >
-                              <span className="text-base">×</span>
+                              <span className="text-sm">×</span>
                             </Button>
                           </div>
                         ))}
