@@ -373,20 +373,23 @@ export default function Auth() {
                   )}
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={signupData.email}
-                    onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                    required
-                  />
-                  {signupErrors.email && (
-                    <p className="text-sm text-destructive">{signupErrors.email}</p>
-                  )}
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email</Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      placeholder="your@email.com"
+                      value={signupData.email}
+                      onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Email dùng để liên lạc và khôi phục mật khẩu nếu bạn quên
+                    </p>
+                    {signupErrors.email && (
+                      <p className="text-sm text-destructive">{signupErrors.email}</p>
+                    )}
+                  </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Password</Label>

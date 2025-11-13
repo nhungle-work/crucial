@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Sparkles, PartyPopper, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { Sparkles, PartyPopper, Calendar, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -242,6 +242,29 @@ export default function WeeklyPlanner() {
     return weekData.tasks.filter(t => t.roleIndex === roleIndex && t.day === day);
   };
 
+  const moveRole = (index: number, direction: "up" | "down") => {
+    if (direction === "up" && index === 0) return;
+    if (direction === "down" && index === weekData.roles.length - 1) return;
+    
+    const newRoles = [...weekData.roles];
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    
+    // Swap roles
+    [newRoles[index], newRoles[newIndex]] = [newRoles[newIndex], newRoles[index]];
+    
+    // Update task role indices
+    const newTasks = weekData.tasks.map(task => {
+      if (task.roleIndex === index) {
+        return { ...task, roleIndex: newIndex };
+      } else if (task.roleIndex === newIndex) {
+        return { ...task, roleIndex: index };
+      }
+      return task;
+    });
+    
+    setWeekData({ ...weekData, roles: newRoles, tasks: newTasks });
+  };
+
   const completedTasksCount = weekData.tasks.filter(t => t.completed).length;
   const totalTasksCount = weekData.tasks.length;
   const progressPercent = totalTasksCount > 0 ? (completedTasksCount / totalTasksCount) * 100 : 0;
@@ -304,7 +327,8 @@ export default function WeeklyPlanner() {
         <Card className="overflow-x-auto shadow-lg">
           <div className="min-w-[1400px]">
             {/* Header Row */}
-            <div className="grid grid-cols-[200px_250px_150px_repeat(7,150px)] border-b-2 border-border bg-gradient-to-r from-lavender/30 to-peach/30">
+            <div className="grid grid-cols-[60px_200px_250px_150px_repeat(7,150px)] border-b-2 border-border bg-gradient-to-r from-lavender/30 to-peach/30">
+              <div className="p-3 font-bold text-sm border-r border-border"></div>
               <div className="p-3 font-bold text-sm border-r border-border">Role</div>
               <div className="p-3 font-bold text-sm border-r border-border">Weekly Goals</div>
               <div className="p-3 font-bold text-sm border-r border-border">Notes</div>
@@ -316,9 +340,41 @@ export default function WeeklyPlanner() {
             </div>
 
             {/* Role Rows */}
-            <div className="grid grid-cols-[200px_250px_150px_repeat(7,150px)]">
+            <div className="grid grid-cols-[60px_200px_250px_150px_repeat(7,150px)]">
               {weekData.roles.map((role, roleIndex) => (
                 <>
+                  {/* Move buttons */}
+                  <div
+                    key={`move-${roleIndex}`}
+                    className="p-2 border-r border-b border-border flex flex-col items-center justify-center gap-1"
+                    style={{
+                      backgroundColor: roleIndex % 5 === 0 ? 'hsl(var(--sky) / 0.1)' :
+                                     roleIndex % 5 === 1 ? 'hsl(var(--lavender) / 0.1)' :
+                                     roleIndex % 5 === 2 ? 'hsl(var(--peach) / 0.1)' :
+                                     roleIndex % 5 === 3 ? 'hsl(var(--coral) / 0.1)' :
+                                     'hsl(var(--mint) / 0.1)'
+                    }}
+                  >
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => moveRole(roleIndex, "up")}
+                      disabled={roleIndex === 0}
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => moveRole(roleIndex, "down")}
+                      disabled={roleIndex === weekData.roles.length - 1}
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </div>
+
                   {/* Role Name */}
                   <div
                     key={`role-${roleIndex}`}
@@ -331,11 +387,11 @@ export default function WeeklyPlanner() {
                                      'hsl(var(--mint) / 0.1)'
                     }}
                   >
-                    <Input
+                    <Textarea
                       value={role.name}
                       onChange={(e) => updateRole(roleIndex, "name", e.target.value)}
                       placeholder={`Role ${roleIndex + 1}`}
-                      className="h-8 bg-card/50 border-border/50"
+                      className="min-h-[60px] bg-card/50 border-border/50 resize-none"
                     />
                   </div>
 
@@ -401,11 +457,11 @@ export default function WeeklyPlanner() {
                               onCheckedChange={() => toggleTask(task.id)}
                               className="mt-1 flex-shrink-0"
                             />
-                            <Input
+                            <Textarea
                               value={task.text}
                               onChange={(e) => updateTask(task.id, e.target.value)}
                               placeholder="Task..."
-                              className={`h-8 flex-1 text-xs bg-card/50 ${task.completed ? 'line-through opacity-60' : ''}`}
+                              className={`min-h-[32px] flex-1 text-xs bg-card/50 resize-none ${task.completed ? 'line-through opacity-60' : ''}`}
                             />
                             <Button
                               variant="ghost"
