@@ -42,7 +42,31 @@ const CELEBRATION_MESSAGES = [
 export default function WeeklyPlanner() {
   const [allWeeksData, setAllWeeksData] = useState<Record<string, WeekData>>(() => {
     const saved = localStorage.getItem("weeklyPlannerAll");
-    return saved ? JSON.parse(saved) : {};
+    const data = saved ? JSON.parse(saved) : {};
+    
+    // One-time migration: Check if migration has been done
+    const migrationDone = localStorage.getItem("weeklyPlannerMigrated");
+    if (!migrationDone) {
+      // Clear goals and notes from all stored weeks (keep only role names)
+      const migrated: Record<string, WeekData> = {};
+      Object.keys(data).forEach(key => {
+        const weekData = data[key];
+        migrated[key] = {
+          ...weekData,
+          roles: weekData.roles.map((role: Role) => ({
+            name: role.name,
+            goal: "",
+            note: "",
+          })),
+        };
+      });
+      
+      // Mark migration as done
+      localStorage.setItem("weeklyPlannerMigrated", "true");
+      return migrated;
+    }
+    
+    return data;
   });
 
   const [currentWeekStart, setCurrentWeekStart] = useState<string>(() => {
