@@ -38,6 +38,112 @@ export type Database = {
         }
         Relationships: []
       }
+      roles: {
+        Row: {
+          created_at: string | null
+          goal: string
+          id: string
+          name: string
+          note: string
+          planner_id: string
+          role_index: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          goal?: string
+          id?: string
+          name?: string
+          note?: string
+          planner_id: string
+          role_index: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          goal?: string
+          id?: string
+          name?: string
+          note?: string
+          planner_id?: string
+          role_index?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roles_planner_id_fkey"
+            columns: ["planner_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_planners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          completed: boolean
+          created_at: string | null
+          day: string
+          id: string
+          planner_id: string
+          role_index: number
+          text: string
+          updated_at: string | null
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string | null
+          day: string
+          id?: string
+          planner_id: string
+          role_index: number
+          text?: string
+          updated_at?: string | null
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string | null
+          day?: string
+          id?: string
+          planner_id?: string
+          role_index?: number
+          text?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_planner_id_fkey"
+            columns: ["planner_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_planners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weekly_planners: {
+        Row: {
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

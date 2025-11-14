@@ -399,13 +399,11 @@ export default function WeeklyPlanner() {
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-2 sm:p-4 md:p-8">
       <div className="max-w-[1800px] mx-auto">
         <div className="text-center mb-4 sm:mb-6 md:mb-8 relative">
-          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-primary animate-pulse" />
-            <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-              Weekly Planner
-            </h1>
-            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-primary animate-pulse" />
-          </div>
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-2 sm:mb-3">
+            <span className="bg-gradient-to-r from-pink-400 to-green-300 bg-clip-text text-transparent">
+              ✨ Weekly Planner ✨
+            </span>
+          </h1>
 
           <div className="flex items-center justify-center gap-2 sm:gap-4 mb-3 sm:mb-4">
             <Button
@@ -464,7 +462,7 @@ export default function WeeklyPlanner() {
 
         <Card className="overflow-x-auto shadow-2xl border-primary/20">
           <div className="min-w-[800px]">
-            <div className="grid grid-cols-10 gap-0 border-b border-border/50">
+            <div className="grid grid-cols-11 gap-0 border-b border-border/50">
               <div className="col-span-1 p-2 sm:p-3 bg-primary/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
                 Role
               </div>
@@ -487,7 +485,7 @@ export default function WeeklyPlanner() {
             {weekData.roles.map((role, roleIndex) => (
               <div
                 key={roleIndex}
-                className="grid grid-cols-10 gap-0 border-b border-border/30 group hover:bg-muted/20 transition-colors"
+                className="grid grid-cols-11 gap-0 border-b border-border/30 group hover:bg-muted/20 transition-colors"
                 draggable
                 onDragStart={(e) => handleDragStart(e, roleIndex)}
                 onDragOver={handleDragOver}
