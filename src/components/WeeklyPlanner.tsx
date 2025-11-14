@@ -182,6 +182,20 @@ export default function WeeklyPlanner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Auto-resize all textareas when data changes
+  useEffect(() => {
+    const resizeAllTextareas = () => {
+      const textareas = document.querySelectorAll('textarea');
+      textareas.forEach((textarea) => {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+      });
+    };
+    
+    // Small delay to ensure DOM is updated
+    setTimeout(resizeAllTextareas, 10);
+  }, [weekData]);
+
   function getMonday(date: Date) {
     const day = date.getDay();
     const diff = date.getDate() - day + (day === 0 ? -6 : 1);
@@ -473,9 +487,8 @@ export default function WeeklyPlanner() {
                     value={role.name}
                     onChange={(e) => updateRole(roleIndex, "name", e.target.value)}
                     placeholder={`Role ${roleIndex + 1}`}
-                    className="w-full bg-card/50 border-border/50 resize-none overflow-hidden whitespace-normal break-words"
-                    rows={2}
-                    style={{ height: 'auto', minHeight: '48px' }}
+                    className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
+                    style={{ minHeight: '48px', overflow: 'hidden' }}
                     onInput={(e) => {
                       const target = e.target as HTMLTextAreaElement;
                       target.style.height = 'auto';
@@ -504,9 +517,8 @@ export default function WeeklyPlanner() {
                       value={role.goal}
                       onChange={(e) => updateRole(roleIndex, "goal", e.target.value)}
                       placeholder="What do you want to achieve?"
-                      className="w-full bg-card/50 border-border/50 resize-none overflow-hidden whitespace-normal break-words"
-                      rows={2}
-                      style={{ height: 'auto', minHeight: '48px' }}
+                      className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
+                      style={{ minHeight: '48px', overflow: 'hidden' }}
                       onInput={(e) => {
                         const target = e.target as HTMLTextAreaElement;
                         target.style.height = 'auto';
@@ -535,9 +547,8 @@ export default function WeeklyPlanner() {
                       value={role.note}
                       onChange={(e) => updateRole(roleIndex, "note", e.target.value)}
                       placeholder="Notes for this role..."
-                      className="w-full bg-card/50 border-border/50 resize-none overflow-hidden whitespace-normal break-words"
-                      rows={2}
-                      style={{ height: 'auto', minHeight: '48px' }}
+                      className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
+                      style={{ minHeight: '48px', overflow: 'hidden' }}
                       onInput={(e) => {
                         const target = e.target as HTMLTextAreaElement;
                         target.style.height = 'auto';
@@ -575,9 +586,8 @@ export default function WeeklyPlanner() {
                               value={task.text}
                               onChange={(e) => updateTask(task.id, e.target.value)}
                               placeholder="Task..."
-                              className={`flex-1 text-xs bg-card/50 resize-none overflow-hidden whitespace-normal break-words ${task.completed ? 'line-through opacity-60' : ''}`}
-                              rows={1}
-                              style={{ height: 'auto', minHeight: '32px' }}
+                              className={`flex-1 text-xs bg-card/50 resize-none whitespace-normal break-words ${task.completed ? 'line-through opacity-60' : ''}`}
+                              style={{ minHeight: '32px', overflow: 'hidden' }}
                               onInput={(e) => {
                                 const target = e.target as HTMLTextAreaElement;
                                 target.style.height = 'auto';
