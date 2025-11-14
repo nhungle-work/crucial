@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Sparkles, PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Role {
   name: string;
@@ -26,6 +25,7 @@ interface WeekData {
   roles: Role[];
   tasks: Task[];
   weekStart: string;
+  plannerId?: string;
 }
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -40,147 +40,24 @@ const CELEBRATION_MESSAGES = [
 ];
 
 export default function WeeklyPlanner() {
-  const [allWeeksData, setAllWeeksData] = useState<Record<string, WeekData>>(() => {
-    const saved = localStorage.getItem("weeklyPlannerAll");
-    const data = saved ? JSON.parse(saved) : {};
-    
-    // One-time migration: Check if migration has been done
-    const migrationDone = localStorage.getItem("weeklyPlannerMigrated");
-    if (!migrationDone) {
-      // Clear goals and notes from all stored weeks (keep only role names)
-      const migrated: Record<string, WeekData> = {};
-      Object.keys(data).forEach(key => {
-        const weekData = data[key];
-        migrated[key] = {
-          ...weekData,
-          roles: weekData.roles.map((role: Role) => ({
-            name: role.name,
-            goal: "",
-            note: "",
-          })),
-        };
-      });
-      
-      // Mark migration as done
-      localStorage.setItem("weeklyPlannerMigrated", "true");
-      return migrated;
-    }
-    
-    return data;
-  });
-
   const [currentWeekStart, setCurrentWeekStart] = useState<string>(() => {
     return getMonday(new Date()).toISOString().split("T")[0];
   });
 
-  const [weekData, setWeekData] = useState<WeekData>(() => {
-    const weekKey = getMonday(new Date()).toISOString().split("T")[0];
-    if (allWeeksData[weekKey]) {
-      // Migrate old data with 10 roles to 7 roles
-      const data = allWeeksData[weekKey];
-      if (data.roles.length > 7) {
-        return {
-          ...data,
-          roles: data.roles.slice(0, 7),
-          tasks: data.tasks.filter(t => t.roleIndex < 7),
-        };
-      }
-      return data;
-    }
-    
-    // New week: try to copy role names only from previous week
-    const targetDate = new Date(weekKey);
-    const allDates = Object.keys(allWeeksData)
-      .map(key => new Date(key))
-      .filter(date => date < targetDate)
-      .sort((a, b) => b.getTime() - a.getTime());
-    
-    let roles = Array(7).fill(null).map(() => ({ name: "", goal: "", note: "" }));
-    if (allDates.length > 0) {
-      const previousWeekKey = allDates[0].toISOString().split("T")[0];
-      const previousWeekData = allWeeksData[previousWeekKey];
-      roles = previousWeekData.roles.map(role => ({
-        name: role.name,
-        goal: "",
-        note: "",
-      }));
-    }
-    
-    return {
-      roles,
-      tasks: [],
-      weekStart: weekKey,
-    };
+  const [weekData, setWeekData] = useState<WeekData>({
+    roles: Array(7).fill(null).map(() => ({ name: "", goal: "", note: "" })),
+    tasks: [],
+    weekStart: currentWeekStart,
   });
 
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [showYearReview, setShowYearReview] = useState(false);
-  const [yearReviewAnswers, setYearReviewAnswers] = useState({
-    achievements: "",
-    challenges: "",
-    lessons: "",
-    gratitude: "",
-    nextYearGoals: "",
-  });
-  const [draggedRole, setDraggedRole] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [celebration, setCelebration] = useState<string | null>(null);
+  const [draggedRoleIndex, setDraggedRoleIndex] = useState<number | null>(null);
 
+  // Load week data from database
   useEffect(() => {
-    const updatedAllWeeks = { ...allWeeksData, [currentWeekStart]: weekData };
-    setAllWeeksData(updatedAllWeeks);
-    localStorage.setItem("weeklyPlannerAll", JSON.stringify(updatedAllWeeks));
-  }, [weekData, currentWeekStart]);
-
-  useEffect(() => {
-    const checkYearEnd = () => {
-      const today = new Date();
-      const month = today.getMonth() + 1;
-      const day = today.getDate();
-      
-      if ((month === 12 && day >= 1) || (month === 1 && day <= 31)) {
-        const lastShown = localStorage.getItem("lastYearReviewShown");
-        const currentYear = today.getFullYear();
-        
-        if (!lastShown || lastShown !== currentYear.toString()) {
-          setShowYearReview(true);
-          localStorage.setItem("lastYearReviewShown", currentYear.toString());
-        }
-      }
-    };
-    
-    checkYearEnd();
-  }, []);
-
-  // One-time migration: ensure all weeks have max 7 roles
-  useEffect(() => {
-    let modified = false;
-    const updated: Record<string, WeekData> = {} as any;
-    for (const [key, data] of Object.entries(allWeeksData)) {
-      const d = data as WeekData;
-      if (d.roles.length > 7) {
-        modified = true;
-        updated[key] = {
-          ...d,
-          roles: d.roles.slice(0, 7),
-          tasks: d.tasks.filter((t) => t.roleIndex < 7),
-        };
-      } else {
-        updated[key] = d;
-      }
-    }
-    if (modified) {
-      setAllWeeksData(updated);
-      localStorage.setItem("weeklyPlannerAll", JSON.stringify(updated));
-      if (weekData.roles.length > 7) {
-        setWeekData({
-          ...weekData,
-          roles: weekData.roles.slice(0, 7),
-          tasks: weekData.tasks.filter((t) => t.roleIndex < 7),
-        });
-      }
-    }
-    // run only once on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    loadWeekData(currentWeekStart);
+  }, [currentWeekStart]);
 
   // Auto-resize all textareas when data changes
   useEffect(() => {
@@ -192,328 +69,453 @@ export default function WeeklyPlanner() {
       });
     };
     
-    // Small delay to ensure DOM is updated
     setTimeout(resizeAllTextareas, 10);
   }, [weekData]);
 
   function getMonday(date: Date) {
     const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(date.setDate(diff));
+    const diff = day === 0 ? -6 : 1 - day;
+    const monday = new Date(date);
+    monday.setDate(date.getDate() + diff);
+    monday.setHours(0, 0, 0, 0);
+    return monday;
   }
 
-  function getWeekRange() {
-    const start = new Date(currentWeekStart);
+  function formatDateRange(startDate: string) {
+    const start = new Date(startDate);
     const end = new Date(start);
-    end.setDate(end.getDate() + 6);
-    
-    const formatDate = (date: Date) => {
-      return `${date.getDate()}/${date.getMonth() + 1}`;
-    };
-    
-    return `${formatDate(start)} - ${formatDate(end)}`;
+    end.setDate(start.getDate() + 6);
+    return `${start.getDate()}/${start.getMonth() + 1} - ${end.getDate()}/${end.getMonth() + 1}`;
   }
 
-  function getPreviousWeekRoles(targetWeekStart: string): Role[] {
-    // Find the most recent week before targetWeekStart that has roles
-    const targetDate = new Date(targetWeekStart);
-    const allDates = Object.keys(allWeeksData)
-      .map(key => new Date(key))
-      .filter(date => date < targetDate)
-      .sort((a, b) => b.getTime() - a.getTime()); // Sort descending
-    
-    if (allDates.length === 0) {
-      return Array(7).fill(null).map(() => ({ name: "", goal: "", note: "" }));
+  async function loadWeekData(weekStart: string) {
+    try {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error("Please log in to access your planner");
+        return;
+      }
+
+      // Get or create planner for this week
+      let { data: planner, error: plannerError } = await (supabase as any)
+        .from('weekly_planners')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('week_start', weekStart)
+        .maybeSingle();
+
+      if (plannerError) {
+        console.error('Error loading planner:', plannerError);
+        toast.error("Failed to load planner");
+        return;
+      }
+
+      let plannerId: string;
+
+      if (!planner) {
+        // Create new planner
+        const { data: newPlanner, error: createError } = await (supabase as any)
+          .from('weekly_planners')
+          .insert({ user_id: user.id, week_start: weekStart })
+          .select('id')
+          .single();
+
+        if (createError || !newPlanner) {
+          console.error('Error creating planner:', createError);
+          toast.error("Failed to create planner");
+          return;
+        }
+
+        plannerId = newPlanner.id;
+
+        // Initialize 7 empty roles
+        const emptyRoles = Array(7).fill(null).map((_, index) => ({
+          planner_id: plannerId,
+          role_index: index,
+          name: '',
+          goal: '',
+          note: ''
+        }));
+
+        await (supabase as any).from('roles').insert(emptyRoles);
+      } else {
+        plannerId = planner.id;
+      }
+
+      // Load roles and tasks
+      const [rolesResult, tasksResult] = await Promise.all([
+        (supabase as any)
+          .from('roles')
+          .select('*')
+          .eq('planner_id', plannerId)
+          .order('role_index'),
+        (supabase as any)
+          .from('tasks')
+          .select('*')
+          .eq('planner_id', plannerId)
+      ]);
+
+      if (rolesResult.error) {
+        console.error('Error loading roles:', rolesResult.error);
+        toast.error("Failed to load roles");
+        return;
+      }
+
+      if (tasksResult.error) {
+        console.error('Error loading tasks:', tasksResult.error);
+        toast.error("Failed to load tasks");
+        return;
+      }
+
+      const roles: Role[] = rolesResult.data.map(r => ({
+        name: r.name,
+        goal: r.goal,
+        note: r.note
+      }));
+
+      const tasks: Task[] = tasksResult.data.map(t => ({
+        id: t.id,
+        text: t.text,
+        completed: t.completed,
+        roleIndex: t.role_index,
+        day: t.day
+      }));
+
+      setWeekData({
+        roles,
+        tasks,
+        weekStart,
+        plannerId
+      });
+
+    } catch (error) {
+      console.error('Error loading week data:', error);
+      toast.error("Failed to load week data");
+    } finally {
+      setLoading(false);
     }
-    
-    const previousWeekKey = allDates[0].toISOString().split("T")[0];
-    const previousWeekData = allWeeksData[previousWeekKey];
-    
-    // Only copy role names, not goals or notes
-    return previousWeekData.roles.map(role => ({
-      name: role.name,
-      goal: "",
-      note: "",
-    }));
   }
 
-  const navigateWeek = (direction: "prev" | "next") => {
+  async function updateRole(index: number, field: keyof Role, value: string) {
+    if (!weekData.plannerId) return;
+
+    const updatedRoles = [...weekData.roles];
+    updatedRoles[index] = { ...updatedRoles[index], [field]: value };
+    setWeekData({ ...weekData, roles: updatedRoles });
+
+    // Update in database
+    const { error } = await (supabase as any)
+      .from('roles')
+      .update({ [field]: value })
+      .eq('planner_id', weekData.plannerId)
+      .eq('role_index', index);
+
+    if (error) {
+      console.error('Error updating role:', error);
+      toast.error("Failed to update role");
+    }
+  }
+
+  async function addTask(roleIndex: number, day: string) {
+    if (!weekData.plannerId) return;
+
+    const newTaskData = {
+      planner_id: weekData.plannerId,
+      role_index: roleIndex,
+      day: day,
+      text: '',
+      completed: false
+    };
+
+    const { data, error } = await (supabase as any)
+      .from('tasks')
+      .insert(newTaskData)
+      .select()
+      .single();
+
+    if (error || !data) {
+      console.error('Error adding task:', error);
+      toast.error("Failed to add task");
+      return;
+    }
+
+    const newTask: Task = {
+      id: data.id,
+      text: data.text,
+      completed: data.completed,
+      roleIndex: data.role_index,
+      day: data.day
+    };
+
+    setWeekData({ ...weekData, tasks: [...weekData.tasks, newTask] });
+  }
+
+  async function updateTask(taskId: string, text: string) {
+    const updatedTasks = weekData.tasks.map(task =>
+      task.id === taskId ? { ...task, text } : task
+    );
+    setWeekData({ ...weekData, tasks: updatedTasks });
+
+    const { error } = await (supabase as any)
+      .from('tasks')
+      .update({ text })
+      .eq('id', taskId);
+
+    if (error) {
+      console.error('Error updating task:', error);
+      toast.error("Failed to update task");
+    }
+  }
+
+  async function toggleTask(taskId: string) {
+    const task = weekData.tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const newCompleted = !task.completed;
+    const updatedTasks = weekData.tasks.map(t =>
+      t.id === taskId ? { ...t, completed: newCompleted } : t
+    );
+    setWeekData({ ...weekData, tasks: updatedTasks });
+
+    const { error } = await (supabase as any)
+      .from('tasks')
+      .update({ completed: newCompleted })
+      .eq('id', taskId);
+
+    if (error) {
+      console.error('Error toggling task:', error);
+      toast.error("Failed to update task");
+      return;
+    }
+
+    if (newCompleted) {
+      const randomMessage = CELEBRATION_MESSAGES[Math.floor(Math.random() * CELEBRATION_MESSAGES.length)];
+      setCelebration(randomMessage);
+      setTimeout(() => setCelebration(null), 3000);
+    }
+  }
+
+  async function deleteTask(taskId: string) {
+    const updatedTasks = weekData.tasks.filter(t => t.id !== taskId);
+    setWeekData({ ...weekData, tasks: updatedTasks });
+
+    const { error } = await (supabase as any)
+      .from('tasks')
+      .delete()
+      .eq('id', taskId);
+
+    if (error) {
+      console.error('Error deleting task:', error);
+      toast.error("Failed to delete task");
+    }
+  }
+
+  function changeWeek(direction: "prev" | "next") {
     const current = new Date(currentWeekStart);
     const newDate = new Date(current);
     newDate.setDate(current.getDate() + (direction === "next" ? 7 : -7));
-    const newWeekStart = getMonday(newDate).toISOString().split("T")[0];
-    
-    setCurrentWeekStart(newWeekStart);
-    
-    if (allWeeksData[newWeekStart]) {
-      // Migrate old data with 10 roles to 7 roles
-      const data = allWeeksData[newWeekStart];
-      if (data.roles.length > 7) {
-        setWeekData({
-          ...data,
-          roles: data.roles.slice(0, 7),
-          tasks: data.tasks.filter(t => t.roleIndex < 7),
-        });
-      } else {
-        setWeekData(data);
-      }
-    } else {
-      // New week: copy roles from previous week
-      const rolesFromPrevious = getPreviousWeekRoles(newWeekStart);
-      setWeekData({
-        roles: rolesFromPrevious,
-        tasks: [],
-        weekStart: newWeekStart,
-      });
-    }
-  };
+    setCurrentWeekStart(newDate.toISOString().split("T")[0]);
+  }
 
-  const updateRole = (index: number, field: "name" | "goal" | "note", value: string) => {
-    const newRoles = [...weekData.roles];
-    newRoles[index] = { ...newRoles[index], [field]: value };
-    setWeekData({ ...weekData, roles: newRoles });
-    
-    // Show encouragement when starting to plan
-    if (field === "name" && value && !weekData.roles.some(r => r.name)) {
-      toast.success("🌱 Great start! Let's plan an amazing week!", {
-        duration: 3000,
-      });
-    }
-  };
+  function handleDragStart(e: React.DragEvent, roleIndex: number) {
+    setDraggedRoleIndex(roleIndex);
+    e.dataTransfer.effectAllowed = "move";
+  }
 
-  const addTask = (roleIndex: number, day: string) => {
-    const newTask: Task = {
-      id: Date.now().toString(),
-      text: "",
-      completed: false,
-      roleIndex,
-      day,
-    };
-    setWeekData({ ...weekData, tasks: [...weekData.tasks, newTask] });
-  };
-
-  const updateTask = (taskId: string, text: string) => {
-    const newTasks = weekData.tasks.map(task =>
-      task.id === taskId ? { ...task, text } : task
-    );
-    setWeekData({ ...weekData, tasks: newTasks });
-  };
-
-  const toggleTask = (taskId: string) => {
-    const task = weekData.tasks.find(t => t.id === taskId);
-    const newTasks = weekData.tasks.map(t =>
-      t.id === taskId ? { ...t, completed: !t.completed } : t
-    );
-    setWeekData({ ...weekData, tasks: newTasks });
-    
-    if (task && !task.completed) {
-      const message = CELEBRATION_MESSAGES[Math.floor(Math.random() * CELEBRATION_MESSAGES.length)];
-      toast.success(message, {
-        duration: 2000,
-      });
-      setShowCelebration(true);
-      setTimeout(() => setShowCelebration(false), 600);
-    }
-  };
-
-  const deleteTask = (taskId: string) => {
-    const newTasks = weekData.tasks.filter(t => t.id !== taskId);
-    setWeekData({ ...weekData, tasks: newTasks });
-  };
-
-  const getTasksForRoleAndDay = (roleIndex: number, day: string) => {
-    return weekData.tasks.filter(t => t.roleIndex === roleIndex && t.day === day);
-  };
-
-  const handleDragStart = (index: number) => {
-    setDraggedRole(index);
-  };
-
-  const handleDragOver = (e: React.DragEvent, index: number) => {
+  function handleDragOver(e: React.DragEvent) {
     e.preventDefault();
-  };
+    e.dataTransfer.dropEffect = "move";
+  }
 
-  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+  async function handleDrop(e: React.DragEvent, targetIndex: number) {
     e.preventDefault();
-    if (draggedRole === null || draggedRole === targetIndex) return;
     
+    if (draggedRoleIndex === null || draggedRoleIndex === targetIndex || !weekData.plannerId) {
+      setDraggedRoleIndex(null);
+      return;
+    }
+
     const newRoles = [...weekData.roles];
-    const draggedItem = newRoles[draggedRole];
-    newRoles.splice(draggedRole, 1);
-    newRoles.splice(targetIndex, 0, draggedItem);
-    
-    // Update task role indices
+    const [draggedRole] = newRoles.splice(draggedRoleIndex, 1);
+    newRoles.splice(targetIndex, 0, draggedRole);
+
     const newTasks = weekData.tasks.map(task => {
-      if (task.roleIndex === draggedRole) {
+      if (task.roleIndex === draggedRoleIndex) {
         return { ...task, roleIndex: targetIndex };
-      } else if (draggedRole < targetIndex) {
-        // Moving down: shift items between old and new position up
-        if (task.roleIndex > draggedRole && task.roleIndex <= targetIndex) {
-          return { ...task, roleIndex: task.roleIndex - 1 };
-        }
-      } else {
-        // Moving up: shift items between new and old position down
-        if (task.roleIndex >= targetIndex && task.roleIndex < draggedRole) {
-          return { ...task, roleIndex: task.roleIndex + 1 };
-        }
+      } else if (draggedRoleIndex < targetIndex && task.roleIndex > draggedRoleIndex && task.roleIndex <= targetIndex) {
+        return { ...task, roleIndex: task.roleIndex - 1 };
+      } else if (draggedRoleIndex > targetIndex && task.roleIndex >= targetIndex && task.roleIndex < draggedRoleIndex) {
+        return { ...task, roleIndex: task.roleIndex + 1 };
       }
       return task;
     });
-    
+
     setWeekData({ ...weekData, roles: newRoles, tasks: newTasks });
-    setDraggedRole(null);
-  };
+    setDraggedRoleIndex(null);
 
-  const handleDragEnd = () => {
-    setDraggedRole(null);
-  };
+    // Update roles in database
+    const roleUpdates = newRoles.map((role, index) =>
+      (supabase as any)
+        .from('roles')
+        .update({ 
+          name: role.name,
+          goal: role.goal,
+          note: role.note,
+          role_index: index 
+        })
+        .eq('planner_id', weekData.plannerId!)
+        .eq('role_index', index)
+    );
 
-  const completedTasksCount = weekData.tasks.filter(t => t.completed).length;
-  const totalTasksCount = weekData.tasks.length;
-  const progressPercent = totalTasksCount > 0 ? (completedTasksCount / totalTasksCount) * 100 : 0;
+    await Promise.all(roleUpdates);
+
+    // Update tasks in database
+    const taskUpdates = newTasks.map(task =>
+      (supabase as any)
+        .from('tasks')
+        .update({ role_index: task.roleIndex })
+        .eq('id', task.id)
+    );
+
+    await Promise.all(taskUpdates);
+    toast.success("Role order updated!");
+  }
+
+  const totalTasks = weekData.tasks.length;
+  const completedTasks = weekData.tasks.filter(t => t.completed).length;
+  const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+        <p className="text-lg">Loading your planner...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-coral/10 via-lavender/10 to-mint/10 p-4 md:p-8">
-      <div className="max-w-[1600px] mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-4 animate-fade-in">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-coral to-peach rounded-full text-white shadow-lg">
-            <Sparkles className="w-5 h-5" />
-            <span className="font-semibold">Weekly Planner</span>
-            <Sparkles className="w-5 h-5" />
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-2 sm:p-4 md:p-8">
+      <div className="max-w-[1800px] mx-auto">
+        <div className="text-center mb-4 sm:mb-6 md:mb-8 relative">
+          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-primary animate-pulse" />
+            <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+              Weekly Planner
+            </h1>
+            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-primary animate-pulse" />
           </div>
-          
-          <div className="flex items-center justify-center gap-4 text-2xl font-bold text-foreground">
+
+          <div className="flex items-center justify-center gap-2 sm:gap-4 mb-3 sm:mb-4">
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigateWeek("prev")}
-              className="hover:bg-coral/20"
+              onClick={() => changeWeek("prev")}
+              className="hover:bg-primary/10"
             >
-              <ChevronLeft className="w-6 h-6" />
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
+
             <div className="flex items-center gap-2">
-              <Calendar className="w-6 h-6 text-coral" />
-              <span>Week of: {getWeekRange()}</span>
+              <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              <span className="text-base sm:text-lg md:text-2xl font-semibold text-foreground">
+                Week of: {formatDateRange(currentWeekStart)}
+              </span>
             </div>
+
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigateWeek("next")}
-              className="hover:bg-coral/20"
+              onClick={() => changeWeek("next")}
+              className="hover:bg-primary/10"
             >
-              <ChevronRight className="w-6 h-6" />
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
           </div>
-          
-          <p className="text-sm text-muted-foreground italic mt-2">
+
+          <p className="text-xs sm:text-sm md:text-base text-muted-foreground italic mb-3 sm:mb-4">
             Keep important things important
           </p>
-          
-          {totalTasksCount > 0 && (
-            <div className="max-w-md mx-auto">
-              <div className="flex justify-between text-sm text-muted-foreground mb-2">
-                <span>{completedTasksCount} of {totalTasksCount} tasks completed</span>
-                <span>{Math.round(progressPercent)}%</span>
-              </div>
-              <div className="h-3 bg-muted rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-mint to-secondary transition-all duration-500"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-            </div>
-          )}
+
+          <div className="flex items-center justify-center gap-2 sm:gap-3 text-xs sm:text-sm">
+            <span className="text-muted-foreground">
+              {completedTasks} of {totalTasks} tasks completed
+            </span>
+            <span className="font-semibold text-primary">{completionPercentage}%</span>
+          </div>
+          <div className="w-full max-w-md mx-auto mt-2 bg-muted rounded-full h-2 overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-500"
+              style={{ width: `${completionPercentage}%` }}
+            />
+          </div>
         </div>
 
-        {/* Main Planner Grid */}
-        <Card className="overflow-x-auto shadow-lg">
-          <div className="min-w-[1400px]">
-            {/* Header Row */}
-            <div className="grid grid-cols-[40px_200px_250px_150px_repeat(7,150px)] border-b-2 border-border bg-gradient-to-r from-lavender/30 to-peach/30">
-              <div className="p-3 font-bold text-sm border-r border-border"></div>
-              <div className="p-3 font-bold text-sm border-r border-border">Role</div>
-              <div className="p-3 font-bold text-sm border-r border-border">Weekly Goals</div>
-              <div className="p-3 font-bold text-sm border-r border-border">Notes</div>
+        {celebration && (
+          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none">
+            <div className="text-3xl sm:text-4xl md:text-6xl font-bold text-primary animate-bounce flex items-center gap-2 sm:gap-4">
+              <PartyPopper className="w-8 h-8 sm:w-10 sm:h-10 md:w-16 md:h-16" />
+              {celebration}
+              <PartyPopper className="w-8 h-8 sm:w-10 sm:h-10 md:w-16 md:h-16" />
+            </div>
+          </div>
+        )}
+
+        <Card className="overflow-x-auto shadow-2xl border-primary/20">
+          <div className="min-w-[800px]">
+            <div className="grid grid-cols-10 gap-0 border-b border-border/50">
+              <div className="col-span-1 p-2 sm:p-3 bg-primary/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
+                Role
+              </div>
+              <div className="col-span-2 p-2 sm:p-3 bg-secondary/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
+                Weekly Goals
+              </div>
+              <div className="col-span-1 p-2 sm:p-3 bg-accent/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
+                Notes
+              </div>
               {DAYS.map((day) => (
-                <div key={day} className="p-3 font-bold text-sm text-center border-r border-border last:border-r-0">
+                <div
+                  key={day}
+                  className="p-2 sm:p-3 bg-muted/30 font-semibold text-xs sm:text-sm text-center border-r last:border-r-0 border-border/50"
+                >
                   {day}
                 </div>
               ))}
             </div>
 
-            {/* Role Rows */}
-            <div className="grid grid-cols-[40px_200px_250px_150px_repeat(7,150px)]">
-              {weekData.roles.map((role, roleIndex) => (
-                <>
-                  {/* Drag handle */}
-                  <div
-                    key={`drag-${roleIndex}`}
-                    className="p-2 border-r border-b border-border flex items-center justify-center cursor-grab active:cursor-grabbing"
-                    draggable
-                    onDragStart={() => handleDragStart(roleIndex)}
-                    onDragOver={(e) => handleDragOver(e, roleIndex)}
-                    onDrop={(e) => handleDrop(e, roleIndex)}
-                    onDragEnd={handleDragEnd}
-                    style={{
-                      backgroundColor: roleIndex % 5 === 0 ? 'hsl(var(--sky) / 0.1)' :
-                                     roleIndex % 5 === 1 ? 'hsl(var(--lavender) / 0.1)' :
-                                     roleIndex % 5 === 2 ? 'hsl(var(--peach) / 0.1)' :
-                                     roleIndex % 5 === 3 ? 'hsl(var(--coral) / 0.1)' :
-                                     'hsl(var(--mint) / 0.1)',
-                      opacity: draggedRole === roleIndex ? 0.5 : 1,
-                    }}
-                  >
-                    <GripVertical className="h-5 w-5 text-muted-foreground" />
-                  </div>
-
-                  {/* Role Name */}
-                  <div
-                    key={`role-${roleIndex}`}
-                    className="p-2 border-r border-b border-border"
-                    onDragOver={(e) => handleDragOver(e, roleIndex)}
-                    onDrop={(e) => handleDrop(e, roleIndex)}
-                    style={{
-                      backgroundColor: roleIndex % 5 === 0 ? 'hsl(var(--sky) / 0.1)' :
-                                     roleIndex % 5 === 1 ? 'hsl(var(--lavender) / 0.1)' :
-                                     roleIndex % 5 === 2 ? 'hsl(var(--peach) / 0.1)' :
-                                     roleIndex % 5 === 3 ? 'hsl(var(--coral) / 0.1)' :
-                                     'hsl(var(--mint) / 0.1)',
-                      opacity: draggedRole === roleIndex ? 0.5 : 1,
-                    }}
-                  >
-                  <Textarea
-                    key={`role-name-${roleIndex}-${role.name}`}
-                    value={role.name}
-                    onChange={(e) => updateRole(roleIndex, "name", e.target.value)}
-                    placeholder={`Role ${roleIndex + 1}`}
-                    className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
-                    style={{ minHeight: '48px', overflow: 'hidden' }}
-                    onInput={(e) => {
-                      const target = e.target as HTMLTextAreaElement;
-                      target.style.height = 'auto';
-                      target.style.height = target.scrollHeight + 'px';
-                    }}
-                  />
-                  </div>
-
-                  {/* Weekly Goal */}
-                  <div
-                    key={`goal-${roleIndex}`}
-                    className="p-2 border-r border-b border-border"
-                    onDragOver={(e) => handleDragOver(e, roleIndex)}
-                    onDrop={(e) => handleDrop(e, roleIndex)}
-                    style={{
-                      backgroundColor: roleIndex % 5 === 0 ? 'hsl(var(--sky) / 0.1)' :
-                                     roleIndex % 5 === 1 ? 'hsl(var(--lavender) / 0.1)' :
-                                     roleIndex % 5 === 2 ? 'hsl(var(--peach) / 0.1)' :
-                                     roleIndex % 5 === 3 ? 'hsl(var(--coral) / 0.1)' :
-                                     'hsl(var(--mint) / 0.1)',
-                      opacity: draggedRole === roleIndex ? 0.5 : 1,
-                    }}
-                  >
+            {weekData.roles.map((role, roleIndex) => (
+              <div
+                key={roleIndex}
+                className="grid grid-cols-10 gap-0 border-b border-border/30 group hover:bg-muted/20 transition-colors"
+                draggable
+                onDragStart={(e) => handleDragStart(e, roleIndex)}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, roleIndex)}
+              >
+                <div className="col-span-1 p-2 sm:p-3 bg-card border-r border-border/30 flex items-start gap-1 sm:gap-2">
+                  <div className="flex items-start gap-1 flex-1">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity cursor-move pt-2">
+                      <GripVertical className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+                    </div>
                     <Textarea
-                      key={`goal-${roleIndex}-${role.goal}`}
+                      value={role.name}
+                      onChange={(e) => updateRole(roleIndex, "name", e.target.value)}
+                      placeholder={`Role ${roleIndex + 1}`}
+                      className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
+                      style={{ minHeight: '48px', overflow: 'hidden' }}
+                      onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = 'auto';
+                        target.style.height = target.scrollHeight + 'px';
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="col-span-2 p-2 sm:p-3 bg-card border-r border-border/30">
+                  <div className="space-y-2">
+                    <Textarea
                       value={role.goal}
                       onChange={(e) => updateRole(roleIndex, "goal", e.target.value)}
                       placeholder="What do you want to achieve?"
@@ -526,24 +528,11 @@ export default function WeeklyPlanner() {
                       }}
                     />
                   </div>
+                </div>
 
-                  {/* Notes */}
-                  <div
-                    key={`note-${roleIndex}`}
-                    className="p-2 border-r border-b border-border"
-                    onDragOver={(e) => handleDragOver(e, roleIndex)}
-                    onDrop={(e) => handleDrop(e, roleIndex)}
-                    style={{
-                      backgroundColor: roleIndex % 5 === 0 ? 'hsl(var(--sky) / 0.1)' :
-                                     roleIndex % 5 === 1 ? 'hsl(var(--lavender) / 0.1)' :
-                                     roleIndex % 5 === 2 ? 'hsl(var(--peach) / 0.1)' :
-                                     roleIndex % 5 === 3 ? 'hsl(var(--coral) / 0.1)' :
-                                     'hsl(var(--mint) / 0.1)',
-                      opacity: draggedRole === roleIndex ? 0.5 : 1,
-                    }}
-                  >
+                <div className="col-span-1 p-2 sm:p-3 bg-card border-r border-border/30">
+                  <div className="space-y-2">
                     <Textarea
-                      key={`note-${roleIndex}-${role.note}`}
                       value={role.note}
                       onChange={(e) => updateRole(roleIndex, "note", e.target.value)}
                       placeholder="Notes for this role..."
@@ -556,27 +545,15 @@ export default function WeeklyPlanner() {
                       }}
                     />
                   </div>
+                </div>
 
-                  {/* Daily Tasks */}
-                  {DAYS.map((day) => {
-                    const tasks = getTasksForRoleAndDay(roleIndex, day);
-                    return (
-                      <div
-                        key={`${roleIndex}-${day}`}
-                        className="p-2 border-r border-b border-border last:border-r-0 space-y-2"
-                        onDragOver={(e) => handleDragOver(e, roleIndex)}
-                        onDrop={(e) => handleDrop(e, roleIndex)}
-                        style={{
-                          backgroundColor: roleIndex % 5 === 0 ? 'hsl(var(--sky) / 0.1)' :
-                                         roleIndex % 5 === 1 ? 'hsl(var(--lavender) / 0.1)' :
-                                         roleIndex % 5 === 2 ? 'hsl(var(--peach) / 0.1)' :
-                                         roleIndex % 5 === 3 ? 'hsl(var(--coral) / 0.1)' :
-                                         'hsl(var(--mint) / 0.1)',
-                          opacity: draggedRole === roleIndex ? 0.5 : 1,
-                        }}
-                      >
-                        {tasks.map((task) => (
-                          <div key={task.id} className="flex items-start gap-1 group">
+                {DAYS.map((day) => (
+                  <div key={day} className="p-2 sm:p-3 bg-card border-r last:border-r-0 border-border/30">
+                    <div className="space-y-1 sm:space-y-2">
+                      {weekData.tasks
+                        .filter((task) => task.roleIndex === roleIndex && task.day === day)
+                        .map((task) => (
+                          <div key={task.id} className="flex items-start gap-1 sm:gap-2 group/task">
                             <Checkbox
                               checked={task.completed}
                               onCheckedChange={() => toggleTask(task.id)}
@@ -597,132 +574,29 @@ export default function WeeklyPlanner() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              className="h-6 w-6 flex-shrink-0"
                               onClick={() => deleteTask(task.id)}
-                              className="h-5 w-5 p-0 hover:bg-destructive/10 hover:text-destructive flex-shrink-0"
                             >
-                              <span className="text-sm">×</span>
+                              <span className="text-xs">×</span>
                             </Button>
                           </div>
                         ))}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => addTask(roleIndex, day)}
-                          className="w-full h-7 text-xs hover:bg-primary/10 hover:text-primary"
-                        >
-                          + Add task
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </>
-              ))}
-            </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => addTask(roleIndex, day)}
+                        className="w-full text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        + Add task
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         </Card>
-
-        {/* Footer Tips */}
-        <div className="text-center text-sm text-muted-foreground space-y-2 animate-fade-in">
-          <p>🎯 Plan your week by roles to maintain balance in all areas of life</p>
-        </div>
       </div>
-
-      {/* Celebration Overlay */}
-      {showCelebration && (
-        <div className="fixed inset-0 pointer-events-none flex items-center justify-center z-50">
-          <PartyPopper className="w-32 h-32 text-coral animate-celebration drop-shadow-2xl" />
-        </div>
-      )}
-
-      {/* Year Review Dialog */}
-      <Dialog open={showYearReview} onOpenChange={setShowYearReview}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-center bg-gradient-to-r from-coral to-peach bg-clip-text text-transparent">
-              ✨ Time for Reflection & New Beginnings ✨
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-6 py-4">
-            <p className="text-center text-muted-foreground italic">
-              "The future depends on what you do today. Take a moment to celebrate your journey and dream about tomorrow."
-            </p>
-
-            <div className="space-y-4">
-              <div>
-                <label className="font-semibold text-coral block mb-2">
-                  🌟 What are you most proud of this year?
-                </label>
-                <Textarea
-                  value={yearReviewAnswers.achievements}
-                  onChange={(e) => setYearReviewAnswers({...yearReviewAnswers, achievements: e.target.value})}
-                  placeholder="Reflect on your wins, big and small..."
-                  className="min-h-[80px]"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-lavender block mb-2">
-                  💪 What challenges helped you grow?
-                </label>
-                <Textarea
-                  value={yearReviewAnswers.challenges}
-                  onChange={(e) => setYearReviewAnswers({...yearReviewAnswers, challenges: e.target.value})}
-                  placeholder="Every obstacle is a stepping stone..."
-                  className="min-h-[80px]"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-mint block mb-2">
-                  📚 What lessons will you carry forward?
-                </label>
-                <Textarea
-                  value={yearReviewAnswers.lessons}
-                  onChange={(e) => setYearReviewAnswers({...yearReviewAnswers, lessons: e.target.value})}
-                  placeholder="Wisdom gained from experience..."
-                  className="min-h-[80px]"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-peach block mb-2">
-                  🙏 What are you grateful for?
-                </label>
-                <Textarea
-                  value={yearReviewAnswers.gratitude}
-                  onChange={(e) => setYearReviewAnswers({...yearReviewAnswers, gratitude: e.target.value})}
-                  placeholder="Gratitude opens the door to abundance..."
-                  className="min-h-[80px]"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-sky block mb-2">
-                  🚀 What exciting goals await you next year?
-                </label>
-                <Textarea
-                  value={yearReviewAnswers.nextYearGoals}
-                  onChange={(e) => setYearReviewAnswers({...yearReviewAnswers, nextYearGoals: e.target.value})}
-                  placeholder="Dream big, start small, act now..."
-                  className="min-h-[80px]"
-                />
-              </div>
-            </div>
-
-            <Button
-              onClick={() => {
-                localStorage.setItem("yearReview", JSON.stringify(yearReviewAnswers));
-                toast.success("🎉 Your reflection has been saved! Here's to an amazing year ahead!");
-                setShowYearReview(false);
-              }}
-              className="w-full bg-gradient-to-r from-coral to-peach hover:opacity-90"
-            >
-              Save My Reflection
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

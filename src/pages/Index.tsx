@@ -29,6 +29,8 @@ export default function Index() {
   }, []);
 
   const handleLogout = async () => {
+    // Clear localStorage to prevent data leaking between users
+    localStorage.clear();
     await supabase.auth.signOut();
     navigate("/auth");
   };
