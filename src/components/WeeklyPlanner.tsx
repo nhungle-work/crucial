@@ -461,9 +461,9 @@ export default function WeeklyPlanner() {
         )}
 
         <Card className="overflow-x-auto shadow-2xl border-primary/20">
-          <div className="min-w-[1400px]">
-            <div className="grid grid-cols-29 gap-0 border-b border-border/50">
-              <div className="col-span-2 p-2 sm:p-3 bg-primary/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
+          <div className="min-w-[2000px]">
+            <div className="grid grid-cols-70 gap-0 border-b border-border/50">
+              <div className="col-span-8 p-2 sm:p-3 bg-primary/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
                 Role
               </div>
               <div className="col-span-4 p-2 sm:p-3 bg-secondary/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
@@ -475,7 +475,7 @@ export default function WeeklyPlanner() {
               {DAYS.map((day) => (
                 <div
                   key={day}
-                  className="col-span-3 p-2 sm:p-3 bg-muted/30 font-semibold text-xs sm:text-sm text-center border-r last:border-r-0 border-border/50"
+                  className="col-span-8 p-2 sm:p-3 bg-muted/30 font-semibold text-xs sm:text-sm text-center border-r last:border-r-0 border-border/50"
                 >
                   {day}
                 </div>
@@ -485,13 +485,13 @@ export default function WeeklyPlanner() {
             {weekData.roles.map((role, roleIndex) => (
               <div
                 key={roleIndex}
-                className="grid grid-cols-29 gap-0 border-b border-border/30 group hover:bg-muted/20 transition-colors"
+                className="grid grid-cols-70 gap-0 border-b border-border/30 group hover:bg-muted/20 transition-colors"
                 draggable
                 onDragStart={(e) => handleDragStart(e, roleIndex)}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, roleIndex)}
               >
-                <div className="col-span-2 p-2 sm:p-3 bg-card border-r border-border/30 flex items-start gap-1 sm:gap-2">
+                <div className="col-span-8 p-2 sm:p-3 bg-card border-r border-border/30 flex items-start gap-1 sm:gap-2">
                   <div className="flex items-start gap-1 flex-1">
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity cursor-move pt-2">
                       <GripVertical className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
@@ -546,7 +546,7 @@ export default function WeeklyPlanner() {
                 </div>
 
                 {DAYS.map((day) => (
-                  <div key={day} className="col-span-3 p-2 sm:p-3 bg-card border-r last:border-r-0 border-border/30">
+                  <div key={day} className="col-span-8 p-2 sm:p-3 bg-card border-r last:border-r-0 border-border/30">
                     <div className="space-y-1 sm:space-y-2">
                       {weekData.tasks
                         .filter((task) => task.roleIndex === roleIndex && task.day === day)
