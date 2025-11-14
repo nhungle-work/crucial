@@ -473,7 +473,7 @@ export default function WeeklyPlanner() {
                     value={role.name}
                     onChange={(e) => updateRole(roleIndex, "name", e.target.value)}
                     placeholder={`Role ${roleIndex + 1}`}
-                    className="w-full bg-card/50 border-border/50 resize-none overflow-hidden"
+                    className="w-full bg-card/50 border-border/50 resize-none overflow-hidden whitespace-normal break-words"
                     rows={2}
                     style={{ height: 'auto', minHeight: '48px' }}
                     onInput={(e) => {
@@ -504,7 +504,7 @@ export default function WeeklyPlanner() {
                       value={role.goal}
                       onChange={(e) => updateRole(roleIndex, "goal", e.target.value)}
                       placeholder="What do you want to achieve?"
-                      className="w-full bg-card/50 border-border/50 resize-none overflow-hidden"
+                      className="w-full bg-card/50 border-border/50 resize-none overflow-hidden whitespace-normal break-words"
                       rows={2}
                       style={{ height: 'auto', minHeight: '48px' }}
                       onInput={(e) => {
@@ -535,7 +535,7 @@ export default function WeeklyPlanner() {
                       value={role.note}
                       onChange={(e) => updateRole(roleIndex, "note", e.target.value)}
                       placeholder="Notes for this role..."
-                      className="w-full bg-card/50 border-border/50 resize-none overflow-hidden"
+                      className="w-full bg-card/50 border-border/50 resize-none overflow-hidden whitespace-normal break-words"
                       rows={2}
                       style={{ height: 'auto', minHeight: '48px' }}
                       onInput={(e) => {
@@ -575,7 +575,7 @@ export default function WeeklyPlanner() {
                               value={task.text}
                               onChange={(e) => updateTask(task.id, e.target.value)}
                               placeholder="Task..."
-                              className={`flex-1 text-xs bg-card/50 resize-none overflow-hidden ${task.completed ? 'line-through opacity-60' : ''}`}
+                              className={`flex-1 text-xs bg-card/50 resize-none overflow-hidden whitespace-normal break-words ${task.completed ? 'line-through opacity-60' : ''}`}
                               rows={1}
                               style={{ height: 'auto', minHeight: '32px' }}
                               onInput={(e) => {
@@ -588,7 +588,7 @@ export default function WeeklyPlanner() {
                               variant="ghost"
                               size="icon"
                               onClick={() => deleteTask(task.id)}
-                              className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive flex-shrink-0"
+                              className="h-5 w-5 p-0 hover:bg-destructive/10 hover:text-destructive flex-shrink-0"
                             >
                               <span className="text-sm">×</span>
                             </Button>
@@ -613,7 +613,6 @@ export default function WeeklyPlanner() {
 
         {/* Footer Tips */}
         <div className="text-center text-sm text-muted-foreground space-y-2 animate-fade-in">
-          <p>💡 Tip: Hover over a task to see the delete button</p>
           <p>🎯 Plan your week by roles to maintain balance in all areas of life</p>
         </div>
       </div>
