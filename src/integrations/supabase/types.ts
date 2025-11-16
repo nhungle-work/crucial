@@ -46,6 +46,7 @@ export type Database = {
           name: string
           note: string
           planner_id: string
+          reflection: string
           role_index: number
           updated_at: string | null
         }
@@ -56,6 +57,7 @@ export type Database = {
           name?: string
           note?: string
           planner_id: string
+          reflection?: string
           role_index: number
           updated_at?: string | null
         }
@@ -66,6 +68,7 @@ export type Database = {
           name?: string
           note?: string
           planner_id?: string
+          reflection?: string
           role_index?: number
           updated_at?: string | null
         }
