@@ -391,7 +391,7 @@ export default function Auth() {
                       required
                     />
                     <p className="text-xs text-muted-foreground">
-                      Email dùng để liên lạc và khôi phục mật khẩu nếu bạn quên
+                      Email is used for contact and password recovery if you forget
                     </p>
                     {signupErrors.email && (
                       <p className="text-sm text-destructive">{signupErrors.email}</p>

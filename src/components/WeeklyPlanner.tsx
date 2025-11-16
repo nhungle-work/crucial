@@ -11,6 +11,7 @@ interface Role {
   name: string;
   goal: string;
   note: string;
+  reflection: string;
 }
 
 interface Task {
@@ -45,7 +46,7 @@ export default function WeeklyPlanner() {
   });
 
   const [weekData, setWeekData] = useState<WeekData>({
-    roles: Array(7).fill(null).map(() => ({ name: "", goal: "", note: "" })),
+    roles: Array(7).fill(null).map(() => ({ name: "", goal: "", note: "", reflection: "" })),
     tasks: [],
     weekStart: currentWeekStart,
   });
@@ -136,7 +137,8 @@ export default function WeeklyPlanner() {
           role_index: index,
           name: '',
           goal: '',
-          note: ''
+          note: '',
+          reflection: ''
         }));
 
         await (supabase as any).from('roles').insert(emptyRoles);
@@ -172,7 +174,8 @@ export default function WeeklyPlanner() {
       const roles: Role[] = rolesResult.data.map(r => ({
         name: r.name,
         goal: r.goal,
-        note: r.note
+        note: r.note,
+        reflection: r.reflection
       }));
 
       const tasks: Task[] = tasksResult.data.map(t => ({
@@ -363,6 +366,7 @@ export default function WeeklyPlanner() {
           name: role.name,
           goal: role.goal,
           note: role.note,
+          reflection: role.reflection,
           role_index: index 
         })
         .eq('planner_id', weekData.plannerId!)
@@ -461,8 +465,8 @@ export default function WeeklyPlanner() {
         )}
 
         <Card className="overflow-x-auto shadow-2xl border-primary/20">
-          <div className="min-w-[2200px]">
-            <div className="grid grid-cols-61 gap-0 border-b border-border/50">
+          <div className="min-w-[2600px]">
+            <div className="grid grid-cols-69 gap-0 border-b border-border/50">
               <div className="col-span-6 p-2 sm:p-3 bg-primary/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
                 Role
               </div>
@@ -471,6 +475,9 @@ export default function WeeklyPlanner() {
               </div>
               <div className="col-span-5 p-2 sm:p-3 bg-accent/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
                 Notes
+              </div>
+              <div className="col-span-8 p-2 sm:p-3 bg-primary/10 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
+                Weekly Reflection
               </div>
               {DAYS.map((day) => (
                 <div
@@ -485,7 +492,7 @@ export default function WeeklyPlanner() {
             {weekData.roles.map((role, roleIndex) => (
               <div
                 key={roleIndex}
-                className="grid grid-cols-61 gap-0 border-b border-border/30 group hover:bg-muted/20 transition-colors"
+                className="grid grid-cols-69 gap-0 border-b border-border/30 group hover:bg-muted/20 transition-colors"
                 draggable
                 onDragStart={(e) => handleDragStart(e, roleIndex)}
                 onDragOver={handleDragOver}
@@ -536,6 +543,23 @@ export default function WeeklyPlanner() {
                       placeholder="Notes for this role..."
                       className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
                       style={{ minHeight: '48px', overflow: 'hidden' }}
+                      onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = 'auto';
+                        target.style.height = target.scrollHeight + 'px';
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="col-span-8 p-2 sm:p-3 bg-card border-r border-border/30">
+                  <div className="space-y-2">
+                    <Textarea
+                      value={role.reflection}
+                      onChange={(e) => updateRole(roleIndex, "reflection", e.target.value)}
+                      placeholder="1. What goals did you achieve?&#10;2. What challenges did you face when pursuing your goals this week? (And why?)&#10;3. What decisions did you make? When making those decisions, did you prioritize what matters most?"
+                      className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words text-xs"
+                      style={{ minHeight: '120px', overflow: 'hidden' }}
                       onInput={(e) => {
                         const target = e.target as HTMLTextAreaElement;
                         target.style.height = 'auto';
