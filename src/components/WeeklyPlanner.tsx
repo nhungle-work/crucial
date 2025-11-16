@@ -11,7 +11,6 @@ interface Role {
   name: string;
   goal: string;
   note: string;
-  reflection: string;
 }
 
 interface Task {
@@ -27,6 +26,7 @@ interface WeekData {
   tasks: Task[];
   weekStart: string;
   plannerId?: string;
+  reflection: string;
 }
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -46,9 +46,10 @@ export default function WeeklyPlanner() {
   });
 
   const [weekData, setWeekData] = useState<WeekData>({
-    roles: Array(7).fill(null).map(() => ({ name: "", goal: "", note: "", reflection: "" })),
+    roles: Array(7).fill(null).map(() => ({ name: "", goal: "", note: "" })),
     tasks: [],
     weekStart: currentWeekStart,
+    reflection: "",
   });
 
   const [loading, setLoading] = useState(true);
@@ -137,13 +138,23 @@ export default function WeeklyPlanner() {
           role_index: index,
           name: '',
           goal: '',
-          note: '',
-          reflection: ''
+          note: ''
         }));
 
         await (supabase as any).from('roles').insert(emptyRoles);
       } else {
         plannerId = planner.id;
+      }
+
+      // Load planner data with reflection
+      const { data: plannerData, error: plannerDataError } = await (supabase as any)
+        .from('weekly_planners')
+        .select('reflection')
+        .eq('id', plannerId)
+        .single();
+
+      if (plannerDataError) {
+        console.error('Error loading planner data:', plannerDataError);
       }
 
       // Load roles and tasks
@@ -174,8 +185,7 @@ export default function WeeklyPlanner() {
       const roles: Role[] = rolesResult.data.map(r => ({
         name: r.name,
         goal: r.goal,
-        note: r.note,
-        reflection: r.reflection
+        note: r.note
       }));
 
       const tasks: Task[] = tasksResult.data.map(t => ({
@@ -190,7 +200,8 @@ export default function WeeklyPlanner() {
         roles,
         tasks,
         weekStart,
-        plannerId
+        plannerId,
+        reflection: plannerData?.reflection || ''
       });
 
     } catch (error) {
@@ -218,6 +229,23 @@ export default function WeeklyPlanner() {
     if (error) {
       console.error('Error updating role:', error);
       toast.error("Failed to update role");
+    }
+  }
+
+  async function updateReflection(value: string) {
+    if (!weekData.plannerId) return;
+
+    setWeekData({ ...weekData, reflection: value });
+
+    // Update in database
+    const { error } = await (supabase as any)
+      .from('weekly_planners')
+      .update({ reflection: value })
+      .eq('id', weekData.plannerId);
+
+    if (error) {
+      console.error('Error updating reflection:', error);
+      toast.error("Failed to update reflection");
     }
   }
 
@@ -366,7 +394,6 @@ export default function WeeklyPlanner() {
           name: role.name,
           goal: role.goal,
           note: role.note,
-          reflection: role.reflection,
           role_index: index 
         })
         .eq('planner_id', weekData.plannerId!)
@@ -476,17 +503,17 @@ export default function WeeklyPlanner() {
               <div className="col-span-5 p-2 sm:p-3 bg-accent/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
                 Notes
               </div>
-              <div className="col-span-8 p-2 sm:p-3 bg-primary/10 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
-                Weekly Reflection
-              </div>
               {DAYS.map((day) => (
                 <div
                   key={day}
-                  className="col-span-6 p-2 sm:p-3 bg-muted/30 font-semibold text-xs sm:text-sm text-center border-r last:border-r-0 border-border/50"
+                  className="col-span-6 p-2 sm:p-3 bg-muted/30 font-semibold text-xs sm:text-sm text-center border-r border-border/50"
                 >
                   {day}
                 </div>
               ))}
+              <div className="col-span-8 p-2 sm:p-3 bg-primary/10 font-semibold text-xs sm:text-sm text-center">
+                Weekly Reflection
+              </div>
             </div>
 
             {weekData.roles.map((role, roleIndex) => (
@@ -552,25 +579,8 @@ export default function WeeklyPlanner() {
                   </div>
                 </div>
 
-                <div className="col-span-8 p-2 sm:p-3 bg-card border-r border-border/30">
-                  <div className="space-y-2">
-                    <Textarea
-                      value={role.reflection}
-                      onChange={(e) => updateRole(roleIndex, "reflection", e.target.value)}
-                      placeholder="1. What goals did you achieve?&#10;2. What challenges did you face when pursuing your goals this week? (And why?)&#10;3. What decisions did you make? When making those decisions, did you prioritize what matters most?"
-                      className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words text-xs"
-                      style={{ minHeight: '120px', overflow: 'hidden' }}
-                      onInput={(e) => {
-                        const target = e.target as HTMLTextAreaElement;
-                        target.style.height = 'auto';
-                        target.style.height = target.scrollHeight + 'px';
-                      }}
-                    />
-                  </div>
-                </div>
-
                 {DAYS.map((day) => (
-                  <div key={day} className="col-span-6 p-2 sm:p-3 bg-card border-r last:border-r-0 border-border/30">
+                  <div key={day} className="col-span-6 p-2 sm:p-3 bg-card border-r border-border/30">
                     <div className="space-y-1 sm:space-y-2">
                       {weekData.tasks
                         .filter((task) => task.roleIndex === roleIndex && task.day === day)
@@ -614,6 +624,25 @@ export default function WeeklyPlanner() {
                     </div>
                   </div>
                 ))}
+
+                {roleIndex === 0 && (
+                  <div className="col-span-8 row-span-7 p-2 sm:p-3 bg-card border-l border-border/30">
+                    <div className="space-y-2 h-full">
+                      <div className="text-xs text-muted-foreground space-y-1 mb-2">
+                        <p>1. What goals did you achieve?</p>
+                        <p>2. What challenges did you face when pursuing your goals this week? (And why?)</p>
+                        <p>3. What decisions did you make? When making those decisions, did you prioritize what matters most?</p>
+                      </div>
+                      <Textarea
+                        value={weekData.reflection}
+                        onChange={(e) => updateReflection(e.target.value)}
+                        placeholder="Write your weekly reflection here..."
+                        className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words text-xs h-full"
+                        style={{ minHeight: '300px' }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
