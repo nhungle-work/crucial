@@ -510,8 +510,8 @@ export default function WeeklyPlanner() {
         )}
 
         <Card className="overflow-x-auto shadow-2xl border-primary/20">
-          <div className="min-w-[2600px]">
-            <div className="grid grid-cols-69 gap-0 border-b border-border/50">
+          <div className="min-w-[2400px]">
+            <div className="grid grid-cols-61 gap-0 border-b border-border/50">
               <div className="col-span-6 p-2 sm:p-3 bg-primary/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
                 Role
               </div>
@@ -529,15 +529,12 @@ export default function WeeklyPlanner() {
                   {day}
                 </div>
               ))}
-              <div className="col-span-8 p-2 sm:p-3 bg-primary/10 font-semibold text-xs sm:text-sm text-center">
-                Weekly Reflection
-              </div>
             </div>
 
             {weekData.roles.map((role, roleIndex) => (
               <div
                 key={roleIndex}
-                className="grid grid-cols-69 gap-0 border-b border-border/30 group hover:bg-muted/20 transition-colors"
+                className="grid grid-cols-61 gap-0 border-b border-border/30 group hover:bg-muted/20 transition-colors"
                 draggable
                 onDragStart={(e) => handleDragStart(e, roleIndex)}
                 onDragOver={handleDragOver}
@@ -642,62 +639,63 @@ export default function WeeklyPlanner() {
                     </div>
                   </div>
                 ))}
-
-                {roleIndex === 0 && (
-                  <div className="col-span-8 row-span-7 p-2 sm:p-3 bg-card border-l border-border/30">
-                    <div className="space-y-3 h-full flex flex-col">
-                      <div className="space-y-2">
-                        <p className="text-xs font-medium text-foreground">What goals did you achieve?</p>
-                        <Textarea
-                          value={weekData.reflectionGoals}
-                          onChange={(e) => updateReflection('goals', e.target.value)}
-                          placeholder="Reflect on your achieved goals..."
-                          className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words text-xs"
-                          style={{ minHeight: '80px', overflow: 'hidden' }}
-                          onInput={(e) => {
-                            const target = e.target as HTMLTextAreaElement;
-                            target.style.height = 'auto';
-                            target.style.height = target.scrollHeight + 'px';
-                          }}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <p className="text-xs font-medium text-foreground">What challenges did you face when pursuing your goals this week? (And why?)</p>
-                        <Textarea
-                          value={weekData.reflectionChallenges}
-                          onChange={(e) => updateReflection('challenges', e.target.value)}
-                          placeholder="Reflect on challenges and their causes..."
-                          className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words text-xs"
-                          style={{ minHeight: '80px', overflow: 'hidden' }}
-                          onInput={(e) => {
-                            const target = e.target as HTMLTextAreaElement;
-                            target.style.height = 'auto';
-                            target.style.height = target.scrollHeight + 'px';
-                          }}
-                        />
-                      </div>
-
-                      <div className="space-y-2 flex-1">
-                        <p className="text-xs font-medium text-foreground">What decisions did you make? When making those decisions, did you prioritize what matters most?</p>
-                        <Textarea
-                          value={weekData.reflectionDecisions}
-                          onChange={(e) => updateReflection('decisions', e.target.value)}
-                          placeholder="Reflect on your decisions and priorities..."
-                          className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words text-xs"
-                          style={{ minHeight: '80px', overflow: 'hidden' }}
-                          onInput={(e) => {
-                            const target = e.target as HTMLTextAreaElement;
-                            target.style.height = 'auto';
-                            target.style.height = target.scrollHeight + 'px';
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             ))}
+
+            <div className="grid grid-cols-61 gap-0 border-b border-border/30">
+              <div className="col-span-61 p-4 sm:p-6 bg-primary/5">
+                <h3 className="text-base sm:text-lg font-semibold mb-4 text-center text-primary">Weekly Reflection</h3>
+                <div className="space-y-4 max-w-4xl mx-auto">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-foreground">What goals did you achieve?</p>
+                    <Textarea
+                      value={weekData.reflectionGoals}
+                      onChange={(e) => updateReflection('goals', e.target.value)}
+                      placeholder="Reflect on your achieved goals..."
+                      className="w-full bg-card border-border/50 resize-none whitespace-normal break-words text-sm"
+                      style={{ minHeight: '80px', overflow: 'hidden' }}
+                      onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = 'auto';
+                        target.style.height = target.scrollHeight + 'px';
+                      }}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-foreground">What challenges did you face when pursuing your goals this week? (And why?)</p>
+                    <Textarea
+                      value={weekData.reflectionChallenges}
+                      onChange={(e) => updateReflection('challenges', e.target.value)}
+                      placeholder="Reflect on challenges and their causes..."
+                      className="w-full bg-card border-border/50 resize-none whitespace-normal break-words text-sm"
+                      style={{ minHeight: '80px', overflow: 'hidden' }}
+                      onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = 'auto';
+                        target.style.height = target.scrollHeight + 'px';
+                      }}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-foreground">What decisions did you make? When making those decisions, did you prioritize what matters most?</p>
+                    <Textarea
+                      value={weekData.reflectionDecisions}
+                      onChange={(e) => updateReflection('decisions', e.target.value)}
+                      placeholder="Reflect on your decisions and priorities..."
+                      className="w-full bg-card border-border/50 resize-none whitespace-normal break-words text-sm"
+                      style={{ minHeight: '80px', overflow: 'hidden' }}
+                      onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = 'auto';
+                        target.style.height = target.scrollHeight + 'px';
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </Card>
       </div>
