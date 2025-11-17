@@ -26,9 +26,6 @@ interface WeekData {
   tasks: Task[];
   weekStart: string;
   plannerId?: string;
-  reflectionGoals: string;
-  reflectionChallenges: string;
-  reflectionDecisions: string;
 }
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -51,9 +48,6 @@ export default function WeeklyPlanner() {
     roles: Array(7).fill(null).map(() => ({ name: "", goal: "", note: "" })),
     tasks: [],
     weekStart: currentWeekStart,
-    reflectionGoals: "",
-    reflectionChallenges: "",
-    reflectionDecisions: "",
   });
 
   const [loading, setLoading] = useState(true);
@@ -105,7 +99,7 @@ export default function WeeklyPlanner() {
       }
 
       // Get or create planner for this week
-      let { data: planner, error: plannerError } = await (supabase as any)
+      let { data: planner, error: plannerError } = await supabase
         .from('weekly_planners')
         .select('id')
         .eq('user_id', user.id)
@@ -145,30 +139,19 @@ export default function WeeklyPlanner() {
           note: ''
         }));
 
-        await (supabase as any).from('roles').insert(emptyRoles);
+        await supabase.from('roles').insert(emptyRoles);
       } else {
         plannerId = planner.id;
       }
 
-      // Load planner data with reflections
-      const { data: plannerData, error: plannerDataError } = await (supabase as any)
-        .from('weekly_planners')
-        .select('reflection_goals, reflection_challenges, reflection_decisions')
-        .eq('id', plannerId)
-        .single();
-
-      if (plannerDataError) {
-        console.error('Error loading planner data:', plannerDataError);
-      }
-
       // Load roles and tasks
       const [rolesResult, tasksResult] = await Promise.all([
-        (supabase as any)
+        supabase
           .from('roles')
           .select('*')
           .eq('planner_id', plannerId)
           .order('role_index'),
-        (supabase as any)
+        supabase
           .from('tasks')
           .select('*')
           .eq('planner_id', plannerId)
@@ -205,9 +188,6 @@ export default function WeeklyPlanner() {
         tasks,
         weekStart,
         plannerId,
-        reflectionGoals: plannerData?.reflection_goals || '',
-        reflectionChallenges: plannerData?.reflection_challenges || '',
-        reflectionDecisions: plannerData?.reflection_decisions || ''
       });
 
     } catch (error) {
@@ -226,7 +206,7 @@ export default function WeeklyPlanner() {
     setWeekData({ ...weekData, roles: updatedRoles });
 
     // Update in database
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('roles')
       .update({ [field]: value })
       .eq('planner_id', weekData.plannerId)
@@ -235,35 +215,6 @@ export default function WeeklyPlanner() {
     if (error) {
       console.error('Error updating role:', error);
       toast.error("Failed to update role");
-    }
-  }
-
-  async function updateReflection(field: 'goals' | 'challenges' | 'decisions', value: string) {
-    if (!weekData.plannerId) return;
-
-    const fieldMap = {
-      goals: 'reflectionGoals',
-      challenges: 'reflectionChallenges',
-      decisions: 'reflectionDecisions'
-    };
-    
-    const dbFieldMap = {
-      goals: 'reflection_goals',
-      challenges: 'reflection_challenges',
-      decisions: 'reflection_decisions'
-    };
-
-    setWeekData({ ...weekData, [fieldMap[field]]: value });
-
-    // Update in database
-    const { error } = await (supabase as any)
-      .from('weekly_planners')
-      .update({ [dbFieldMap[field]]: value })
-      .eq('id', weekData.plannerId);
-
-    if (error) {
-      console.error('Error updating reflection:', error);
-      toast.error("Failed to update reflection");
     }
   }
 
@@ -641,61 +592,6 @@ export default function WeeklyPlanner() {
                 ))}
               </div>
             ))}
-
-            <div className="grid grid-cols-61 gap-0 border-b border-border/30">
-              <div className="col-span-61 p-4 sm:p-6 bg-primary/5">
-                <h3 className="text-base sm:text-lg font-semibold mb-4 text-center text-primary">Weekly Reflection</h3>
-                <div className="space-y-4 max-w-4xl mx-auto">
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-foreground">What goals did you achieve?</p>
-                    <Textarea
-                      value={weekData.reflectionGoals}
-                      onChange={(e) => updateReflection('goals', e.target.value)}
-                      placeholder="Reflect on your achieved goals..."
-                      className="w-full bg-card border-border/50 resize-none whitespace-normal break-words text-sm"
-                      style={{ minHeight: '80px', overflow: 'hidden' }}
-                      onInput={(e) => {
-                        const target = e.target as HTMLTextAreaElement;
-                        target.style.height = 'auto';
-                        target.style.height = target.scrollHeight + 'px';
-                      }}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-foreground">What challenges did you face when pursuing your goals this week? (And why?)</p>
-                    <Textarea
-                      value={weekData.reflectionChallenges}
-                      onChange={(e) => updateReflection('challenges', e.target.value)}
-                      placeholder="Reflect on challenges and their causes..."
-                      className="w-full bg-card border-border/50 resize-none whitespace-normal break-words text-sm"
-                      style={{ minHeight: '80px', overflow: 'hidden' }}
-                      onInput={(e) => {
-                        const target = e.target as HTMLTextAreaElement;
-                        target.style.height = 'auto';
-                        target.style.height = target.scrollHeight + 'px';
-                      }}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-foreground">What decisions did you make? When making those decisions, did you prioritize what matters most?</p>
-                    <Textarea
-                      value={weekData.reflectionDecisions}
-                      onChange={(e) => updateReflection('decisions', e.target.value)}
-                      placeholder="Reflect on your decisions and priorities..."
-                      className="w-full bg-card border-border/50 resize-none whitespace-normal break-words text-sm"
-                      style={{ minHeight: '80px', overflow: 'hidden' }}
-                      onInput={(e) => {
-                        const target = e.target as HTMLTextAreaElement;
-                        target.style.height = 'auto';
-                        target.style.height = target.scrollHeight + 'px';
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </Card>
       </div>
