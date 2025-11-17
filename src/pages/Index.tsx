@@ -4,11 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import WeeklyPlanner from "@/components/WeeklyPlanner";
 import { Button } from "@/components/ui/button";
+import { UserProfileDialog } from "@/components/UserProfileDialog";
 
 export default function Index() {
   const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener
@@ -51,19 +53,27 @@ export default function Index() {
   return (
     <div>
       <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
-        <div className="flex flex-col items-end text-sm">
+        <button
+          onClick={() => setProfileDialogOpen(true)}
+          className="flex flex-col items-end text-sm hover:bg-accent/50 p-2 rounded-md transition-colors cursor-pointer"
+        >
           <span className="font-semibold text-foreground">
             {session.user.user_metadata?.username || session.user.email?.split('@')[0]}
           </span>
           <span className="text-muted-foreground text-xs">
             {session.user.email}
           </span>
-        </div>
+        </button>
         <Button variant="outline" onClick={handleLogout}>
           Logout
         </Button>
       </div>
       <WeeklyPlanner />
+      <UserProfileDialog
+        open={profileDialogOpen}
+        onOpenChange={setProfileDialogOpen}
+        user={session.user}
+      />
     </div>
   );
 }
