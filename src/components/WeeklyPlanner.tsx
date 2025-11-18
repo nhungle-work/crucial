@@ -41,7 +41,8 @@ const CELEBRATION_MESSAGES = [
 
 export default function WeeklyPlanner() {
   const [currentWeekStart, setCurrentWeekStart] = useState<string>(() => {
-    return getMonday(new Date()).toISOString().split("T")[0];
+    const monday = getMonday(new Date());
+    return formatLocalDate(monday);
   });
 
   const [weekData, setWeekData] = useState<WeekData>({
@@ -72,6 +73,18 @@ export default function WeeklyPlanner() {
     setTimeout(resizeAllTextareas, 10);
   }, [weekData]);
 
+  function formatLocalDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function parseLocalDate(dateStr: string): Date {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+
   function getMonday(date: Date) {
     const day = date.getDay();
     const diff = day === 0 ? -6 : 1 - day;
@@ -82,7 +95,7 @@ export default function WeeklyPlanner() {
   }
 
   function formatDateRange(startDate: string) {
-    const start = new Date(startDate);
+    const start = parseLocalDate(startDate);
     const end = new Date(start);
     end.setDate(start.getDate() + 6);
     return `${start.getDate()}/${start.getMonth() + 1} - ${end.getDate()}/${end.getMonth() + 1}`;
@@ -313,10 +326,10 @@ export default function WeeklyPlanner() {
   }
 
   function changeWeek(direction: "prev" | "next") {
-    const current = new Date(currentWeekStart);
+    const current = parseLocalDate(currentWeekStart);
     const newDate = new Date(current);
     newDate.setDate(current.getDate() + (direction === "next" ? 7 : -7));
-    setCurrentWeekStart(newDate.toISOString().split("T")[0]);
+    setCurrentWeekStart(formatLocalDate(newDate));
   }
 
   function handleDragStart(e: React.DragEvent, roleIndex: number) {
