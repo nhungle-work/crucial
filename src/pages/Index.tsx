@@ -5,7 +5,7 @@ import { Session } from "@supabase/supabase-js";
 import WeeklyPlanner from "@/components/WeeklyPlanner";
 import { Button } from "@/components/ui/button";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
-import OnboardingDialog from "@/components/OnboardingDialog";
+import OnboardingOverlay from "@/components/OnboardingOverlay";
 import { HelpCircle } from "lucide-react";
 
 export default function Index() {
@@ -71,15 +71,6 @@ export default function Index() {
   return (
     <div>
       <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setOnboardingOpen(true)}
-          className="gap-2"
-        >
-          <HelpCircle className="h-4 w-4" />
-          <span className="hidden sm:inline">Crucial 101</span>
-        </Button>
         <button
           onClick={() => setProfileDialogOpen(true)}
           className="flex flex-col items-end text-sm hover:bg-accent/50 p-2 rounded-md transition-colors cursor-pointer"
@@ -95,15 +86,15 @@ export default function Index() {
           Logout
         </Button>
       </div>
-      <WeeklyPlanner />
+      <WeeklyPlanner onOpenTutorial={() => setOnboardingOpen(true)} />
       <UserProfileDialog
         open={profileDialogOpen}
         onOpenChange={setProfileDialogOpen}
         user={session.user}
       />
-      <OnboardingDialog
-        open={onboardingOpen}
-        onOpenChange={handleOnboardingClose}
+      <OnboardingOverlay
+        isOpen={onboardingOpen}
+        onClose={() => handleOnboardingClose(false)}
       />
     </div>
   );

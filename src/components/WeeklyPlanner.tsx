@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Sparkles, PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
+import { Sparkles, PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -28,6 +28,10 @@ interface WeekData {
   plannerId?: string;
 }
 
+interface WeeklyPlannerProps {
+  onOpenTutorial: () => void;
+}
+
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const CELEBRATION_MESSAGES = [
   "🌟 Amazing! You're crushing it!",
@@ -39,7 +43,7 @@ const CELEBRATION_MESSAGES = [
   "🎯 Nailed it!",
 ];
 
-export default function WeeklyPlanner() {
+export default function WeeklyPlanner({ onOpenTutorial }: WeeklyPlannerProps) {
   const [currentWeekStart, setCurrentWeekStart] = useState<string>(() => {
     const monday = getMonday(new Date());
     return formatLocalDate(monday);
@@ -412,6 +416,19 @@ export default function WeeklyPlanner() {
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-2 sm:p-4 md:p-8">
       <div className="max-w-[1800px] mx-auto">
         <div className="text-center mb-4 sm:mb-6 md:mb-8 relative">
+          <div className="absolute left-0 top-1/2 -translate-y-1/2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onOpenTutorial}
+              className="gap-2 text-xs sm:text-sm"
+            >
+              <HelpCircle className="h-4 w-4" />
+              <span className="hidden lg:inline">How to design your week with Crucial</span>
+              <span className="lg:hidden">Crucial 101</span>
+            </Button>
+          </div>
+          
           <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-2 sm:mb-3">
             <span className="bg-gradient-to-r from-pink-400 to-green-300 bg-clip-text text-transparent">
               ✨ Weekly Planner ✨
