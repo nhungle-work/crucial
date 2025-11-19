@@ -6,7 +6,7 @@ import WeeklyPlanner from "@/components/WeeklyPlanner";
 import { Button } from "@/components/ui/button";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import OnboardingOverlay from "@/components/OnboardingOverlay";
-import { HelpCircle } from "lucide-react";
+import { FeedbackDialog } from "@/components/FeedbackDialog";
 
 export default function Index() {
   const navigate = useNavigate();
@@ -14,6 +14,7 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener
@@ -86,7 +87,10 @@ export default function Index() {
           Logout
         </Button>
       </div>
-      <WeeklyPlanner onOpenTutorial={() => setOnboardingOpen(true)} />
+      <WeeklyPlanner 
+        onOpenTutorial={() => setOnboardingOpen(true)}
+        onOpenFeedback={() => setFeedbackOpen(true)}
+      />
       <UserProfileDialog
         open={profileDialogOpen}
         onOpenChange={setProfileDialogOpen}
@@ -95,6 +99,10 @@ export default function Index() {
       <OnboardingOverlay
         isOpen={onboardingOpen}
         onClose={() => handleOnboardingClose(false)}
+      />
+      <FeedbackDialog
+        open={feedbackOpen}
+        onOpenChange={setFeedbackOpen}
       />
     </div>
   );
