@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Sparkles, PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical, HelpCircle } from "lucide-react";
+import { Sparkles, PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical, HelpCircle, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -30,6 +30,7 @@ interface WeekData {
 
 interface WeeklyPlannerProps {
   onOpenTutorial: () => void;
+  onOpenFeedback: () => void;
 }
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -43,7 +44,7 @@ const CELEBRATION_MESSAGES = [
   "🎯 Nailed it!",
 ];
 
-export default function WeeklyPlanner({ onOpenTutorial }: WeeklyPlannerProps) {
+export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: WeeklyPlannerProps) {
   const [currentWeekStart, setCurrentWeekStart] = useState<string>(() => {
     const monday = getMonday(new Date());
     return formatLocalDate(monday);
@@ -416,7 +417,7 @@ export default function WeeklyPlanner({ onOpenTutorial }: WeeklyPlannerProps) {
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-2 sm:p-4 md:p-8">
       <div className="max-w-[1800px] mx-auto">
         <div className="text-center mb-4 sm:mb-6 md:mb-8 relative">
-          <div className="absolute left-0 top-1/2 -translate-y-1/2">
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -426,6 +427,15 @@ export default function WeeklyPlanner({ onOpenTutorial }: WeeklyPlannerProps) {
               <HelpCircle className="h-4 w-4" />
               <span className="hidden lg:inline">How to design your week with Crucial</span>
               <span className="lg:hidden">Crucial 101</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onOpenFeedback}
+              className="gap-2 text-xs sm:text-sm"
+            >
+              <Wand2 className="h-4 w-4" />
+              Tell me your wish
             </Button>
           </div>
           
