@@ -5,12 +5,15 @@ import { Session } from "@supabase/supabase-js";
 import WeeklyPlanner from "@/components/WeeklyPlanner";
 import { Button } from "@/components/ui/button";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
+import OnboardingDialog from "@/components/OnboardingDialog";
+import { HelpCircle } from "lucide-react";
 
 export default function Index() {
   const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener
@@ -25,6 +28,14 @@ export default function Index() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
+      
+      // Check if user has seen onboarding
+      if (session?.user) {
+        const hasSeenOnboarding = localStorage.getItem(`onboarding_seen_${session.user.id}`);
+        if (!hasSeenOnboarding) {
+          setOnboardingOpen(true);
+        }
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -35,6 +46,13 @@ export default function Index() {
     localStorage.clear();
     await supabase.auth.signOut();
     navigate("/auth");
+  };
+
+  const handleOnboardingClose = (open: boolean) => {
+    if (!open && session?.user) {
+      localStorage.setItem(`onboarding_seen_${session.user.id}`, 'true');
+    }
+    setOnboardingOpen(open);
   };
 
   if (loading) {
@@ -53,6 +71,15 @@ export default function Index() {
   return (
     <div>
       <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setOnboardingOpen(true)}
+          className="gap-2"
+        >
+          <HelpCircle className="h-4 w-4" />
+          <span className="hidden sm:inline">Crucial 101</span>
+        </Button>
         <button
           onClick={() => setProfileDialogOpen(true)}
           className="flex flex-col items-end text-sm hover:bg-accent/50 p-2 rounded-md transition-colors cursor-pointer"
@@ -73,6 +100,10 @@ export default function Index() {
         open={profileDialogOpen}
         onOpenChange={setProfileDialogOpen}
         user={session.user}
+      />
+      <OnboardingDialog
+        open={onboardingOpen}
+        onOpenChange={handleOnboardingClose}
       />
     </div>
   );
