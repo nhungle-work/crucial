@@ -39,6 +39,13 @@ const steps = [
 export default function OnboardingOverlay({ isOpen, onClose }: OnboardingOverlayProps) {
   const [currentStep, setCurrentStep] = useState(0);
 
+  // Reset to step 0 when opening
+  useState(() => {
+    if (isOpen) {
+      setCurrentStep(0);
+    }
+  });
+
   if (!isOpen) return null;
 
   const currentStepData = steps[currentStep];
@@ -109,7 +116,7 @@ export default function OnboardingOverlay({ isOpen, onClose }: OnboardingOverlay
       <div 
         className={`absolute ${
           currentStepData.highlight === "tips" 
-            ? "left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-[90%] max-w-2xl" 
+            ? "left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-[90%] max-w-2xl max-h-[85vh] overflow-y-auto" 
             : `${getInstructionPosition()} w-[90%] max-w-md`
         } bg-card border border-border rounded-lg shadow-xl p-6 animate-fade-in transition-all duration-500`}
       >
