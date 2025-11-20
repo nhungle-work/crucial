@@ -99,12 +99,18 @@ export default function OnboardingOverlay({ isOpen, onClose }: OnboardingOverlay
 
   return (
     <div className="fixed inset-0 z-[100]">
-      {/* Highlighted area - uses box-shadow to darken everything except the highlighted column */}
+      {/* Dark overlay that covers everything */}
+      {currentStepData.highlight !== "tips" && (
+        <div className="absolute inset-0 bg-black/85 animate-fade-in" />
+      )}
+      
+      {/* Highlighted area with transparent background and bright border */}
       {currentStepData.highlight !== "tips" && (
         <div 
-          className={`absolute ${getHighlightPosition()} border-4 border-primary rounded-lg animate-scale-in transition-all duration-500`}
+          className={`absolute ${getHighlightPosition()} border-4 border-primary rounded-lg animate-scale-in transition-all duration-500 z-10`}
           style={{ 
-            boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.85), 0 0 40px 10px rgba(255, 182, 193, 0.8)',
+            backgroundColor: 'transparent',
+            boxShadow: '0 0 40px 10px rgba(255, 182, 193, 0.8)',
           }}
         />
       )}
@@ -118,8 +124,8 @@ export default function OnboardingOverlay({ isOpen, onClose }: OnboardingOverlay
       <div 
         className={`absolute ${
           currentStepData.highlight === "tips" 
-            ? "left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-[90%] max-w-2xl max-h-[85vh] overflow-y-auto" 
-            : `${getInstructionPosition()} w-[90%] max-w-md`
+            ? "left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-[90%] max-w-2xl max-h-[85vh] overflow-y-auto z-20" 
+            : `${getInstructionPosition()} w-[90%] max-w-md z-20`
         } bg-card border border-border rounded-lg shadow-xl p-6 animate-fade-in transition-all duration-500`}
       >
         <button
