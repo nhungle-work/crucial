@@ -68,13 +68,13 @@ export default function OnboardingOverlay({ isOpen, onClose }: OnboardingOverlay
   const getHighlightPosition = () => {
     switch (currentStepData.highlight) {
       case "role":
-        return "left-[2%] top-[22%] w-[9.5%] h-[60%]";
+        return "left-[2%] top-[15%] w-[9.5%] h-[70%]";
       case "goals":
-        return "left-[12%] top-[22%] w-[13%] h-[60%]";
+        return "left-[12%] top-[15%] w-[13%] h-[70%]";
       case "notes":
-        return "left-[25.5%] top-[22%] w-[8%] h-[60%]";
+        return "left-[25.5%] top-[15%] w-[8%] h-[70%]";
       case "days":
-        return "left-[34%] top-[22%] w-[9.5%] h-[60%]"; // Only Monday column
+        return "left-[34%] top-[15%] w-[9.5%] h-[70%]"; // Only Monday column
       case "tips":
         return "left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%]";
       default:
@@ -85,13 +85,13 @@ export default function OnboardingOverlay({ isOpen, onClose }: OnboardingOverlay
   const getInstructionPosition = () => {
     switch (currentStepData.highlight) {
       case "role":
-        return "left-[13%] top-[25%]";
+        return "left-[13%] top-[20%]";
       case "goals":
-        return "left-[28%] top-[25%]";
+        return "left-[27%] top-[20%]";
       case "notes":
-        return "left-[36%] top-[25%]";
+        return "left-[35%] top-[20%]";
       case "days":
-        return "left-[10%] top-[25%]";
+        return "left-[8%] top-[20%]";
       default:
         return "left-[50%] top-[15%] translate-x-[-50%]";
     }
