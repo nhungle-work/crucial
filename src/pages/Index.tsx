@@ -5,7 +5,7 @@ import { Session } from "@supabase/supabase-js";
 import WeeklyPlanner from "@/components/WeeklyPlanner";
 import { Button } from "@/components/ui/button";
 import OnboardingOverlay from "@/components/OnboardingOverlay";
-import FeedbackDialog from "@/components/FeedbackDialog";
+import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { WeeklyPlan, fetchPlans } from "@/integrations/supabase/plans";
 
 // Định nghĩa cấu trúc dữ liệu cho trang
@@ -176,9 +176,8 @@ export default function Index() {
       <OnboardingOverlay
         isOpen={profileDialogOpen}
         onClose={() => setProfileDialogOpen(false)}
-        userId={state.session.user.id}
       />
-      <FeedbackDialog isOpen={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
+      <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
     </div>
   );
 }
