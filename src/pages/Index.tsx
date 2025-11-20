@@ -72,11 +72,11 @@ export default function Index() {
   return (
     <div>
       <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-2">
           <Button
             variant="ghost"
             onClick={() => setOnboardingOpen(true)}
-            className="text-sm"
+            className="text-sm justify-start"
           >
             <span className="mr-2">?</span>
             How to design your week with Crucial
@@ -84,7 +84,7 @@ export default function Index() {
           <Button
             variant="ghost"
             onClick={() => setFeedbackOpen(true)}
-            className="text-sm"
+            className="text-sm justify-start"
           >
             <span className="mr-2">✨</span>
             Tell me your wish
