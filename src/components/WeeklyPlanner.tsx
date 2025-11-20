@@ -1,631 +1,644 @@
-import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
-import { Sparkles, PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useMemo, useEffect } from 'react';
+import { format, subDays, addDays, startOfWeek, isSameWeek, isToday } from 'date-fns';
+import { vi } from 'date-fns/locale';
+import { createPlan, WeeklyPlan, Role, Task } from '@/integrations/supabase/plans';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Trash2, Plus, CornerDownLeft, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
-interface Role {
-  name: string;
-  goal: string;
-  note: string;
-}
 
-interface Task {
-  id: string;
-  text: string;
-  completed: boolean;
-  roleIndex: number;
-  day: string;
-}
+// Hàm tiện ích để lấy ngày thứ Hai đầu tiên của tuần (theo quy ước Châu Âu, Thứ Hai là ngày đầu tuần)
+const getMonday = (date: Date) => {
+    return startOfWeek(date, { weekStartsOn: 1 }); // 1 = Monday
+};
 
-interface WeekData {
-  roles: Role[];
-  tasks: Task[];
-  weekStart: string;
-  plannerId?: string;
-}
+// Hàm tiện ích để format ngày tháng
+const formatLocaleDate = (date: Date) => {
+    return format(date, 'dd/MM/yyyy', { locale: vi });
+};
 
-// BƯỚC 1: Cập nhật interface Props để nhận dữ liệu
+// --- BỔ SUNG: Định nghĩa Props mới ---
 interface WeeklyPlannerProps {
-  onOpenTutorial: () => void;
-  onOpenFeedback: () => void;
-  // BỔ SUNG PROPS TỪ INDEX.TSX
-  weeklyPlans: any[]; // Dữ liệu đã fetch từ Supabase
-  userId: string; // ID của người dùng đã đăng nhập
+    weeklyPlans: WeeklyPlan[]; // Dữ liệu lịch trình
+    userId: string; // ID người dùng
+    onOpenTutorial: () => void;
+    onOpenFeedback: () => void;
+    onPlanCreatedOrUpdated: (userId: string) => void; // Hàm callback để thông báo cập nhật dữ liệu
 }
 
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-const CELEBRATION_MESSAGES = [
-  "🌟 Amazing! You're crushing it!",
-  "✨ Way to go! Keep it up!",
-  "🎉 Fantastic work!",
-  "💪 You're on fire!",
-  "🚀 Unstoppable!",
-  "⭐ Keep shining!",
-  "🎯 Nailed it!",
-];
+// Định nghĩa cấu trúc cho Form Task
+interface TaskForm {
+    text: string;
+    completed: boolean;
+}
 
-export default function WeeklyPlanner({ weeklyPlans, userId, onOpenTutorial, onOpenFeedback }: WeeklyPlannerProps) {
-  // DÒNG CODE CŨ BỊ LỖI CÚ PHÁP ĐÃ ĐƯỢC XÓA Ở ĐÂY
+// Định nghĩa cấu trúc cho State của Role
+interface RoleState {
+    name: string;
+    goal: string;
+    notes: string;
+    tasks: { [day: string]: TaskForm[] };
+}
 
-  const [currentWeekStart, setCurrentWeekStart] = useState<string>(() => {
-    const monday = getMonday(new Date());
-    return formatLocalDate(monday);
-  });
+// Danh sách các ngày trong tuần
+const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-  const [weekData, setWeekData] = useState<WeekData>({
-    roles: Array(7)
-      .fill(null)
-      .map(() => ({ name: "", goal: "", note: "" })),
-    tasks: [],
-    weekStart: currentWeekStart,
-  });
 
-  const [loading, setLoading] = useState(true);
-  const [celebration, setCelebration] = useState<string | null>(null);
-  const [draggedRoleIndex, setDraggedRoleIndex] = useState<number | null>(null);
-
-  // BƯỚC 3: Thêm useEffect để gán dữ liệu tải về từ index.tsx vào weekData
-  useEffect(() => {
-    const currentWeekPlan = weeklyPlans.find((p) => p.week_start === currentWeekStart);
-
-    if (currentWeekPlan) {
-      // Nếu tìm thấy dữ liệu cho tuần hiện tại trong props đã tải về
-      const roles: Role[] = currentWeekPlan.roles_data.map((r: any) => ({
-        name: r.name,
-        goal: r.goal,
-        note: r.note,
-      }));
-
-      const tasks: Task[] = currentWeekPlan.tasks_data.map((t: any) => ({
-        id: t.id,
-        text: t.text,
-        completed: t.completed,
-        roleIndex: t.role_index,
-        day: t.day,
-      }));
-
-      setWeekData({
-        roles,
-        tasks,
-        weekStart: currentWeekStart,
-        plannerId: currentWeekPlan.id, // Dùng plannerId từ data đã tải
-      });
-      setLoading(false);
-      console.log(`[WeeklyPlanner] Data found for ${currentWeekStart}`, currentWeekPlan);
-    } else {
-      // Nếu không tìm thấy trong data đã tải, chuyển sang load từ DB (logic cũ)
-      // Điều này đảm bảo khi chuyển tuần, nó vẫn hoạt động.
-      // Tuy nhiên, loadWeekData() sẽ xử lý logic này, nên ta chỉ cần đảm bảo loadWeekData chạy đúng.
-      // Chỉ gọi loadWeekData nếu weeklyPlans đã được tải (để tránh race condition)
-      if (weeklyPlans.length === 0 || weeklyPlans.some((p) => p.week_start === currentWeekStart) === false) {
-        loadWeekData(currentWeekStart);
-      }
-    }
-  }, [currentWeekStart, weeklyPlans]); // Chạy lại khi tuần thay đổi HOẶC weeklyPlans thay đổi
-
-  // Auto-resize all textareas when data changes
-  useEffect(() => {
-    const resizeAllTextareas = () => {
-      const textareas = document.querySelectorAll("textarea");
-      textareas.forEach((textarea) => {
-        textarea.style.height = "auto";
-        textarea.style.height = textarea.scrollHeight + "px";
-      });
-    };
-
-    setTimeout(resizeAllTextareas, 10);
-  }, [weekData]);
-
-  function formatLocalDate(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }
-
-  function parseLocalDate(dateStr: string): Date {
-    const [year, month, day] = dateStr.split("-").map(Number);
-    return new Date(year, month - 1, day);
-  }
-
-  function getMonday(date: Date) {
-    const day = date.getDay();
-    const diff = day === 0 ? -6 : 1 - day;
-    const monday = new Date(date);
-    monday.setDate(date.getDate() + diff);
-    monday.setHours(0, 0, 0, 0);
-    return monday;
-  }
-
-  function formatDateRange(startDate: string) {
-    const start = parseLocalDate(startDate);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    return `${start.getDate()}/${start.getMonth() + 1} - ${end.getDate()}/${end.getMonth() + 1}`;
-  }
-
-  async function loadWeekData(weekStart: string) {
-    // FIX NHỎ: Tránh load nếu data đã có sẵn trong props (đã xử lý ở useEffect trên)
-    const existingPlan = weeklyPlans.find((p) => p.week_start === weekStart);
-    if (existingPlan) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      // FIX LỖI: Không cần gọi lại supabase.auth.getUser() vì đã có userId từ props
-      if (!userId) {
-        toast.error("User ID is missing. Please log in.");
-        return;
-      }
-
-      // Get or create planner for this week
-      let { data: planner, error: plannerError } = await supabase
-        .from("weekly_planners")
-        .select("id")
-        .eq("user_id", userId) // Dùng userId từ props
-        .eq("week_start", weekStart)
-        .maybeSingle();
-
-      if (plannerError) {
-        console.error("Error loading planner:", plannerError);
-        toast.error("Failed to load planner");
-        return;
-      }
-
-      let plannerId: string;
-
-      if (!planner) {
-        // Create new planner
-        const { data: newPlanner, error: createError } = await (supabase as any)
-          .from("weekly_planners")
-          .insert({ user_id: userId, week_start: weekStart }) // Dùng userId từ props
-          .select("id")
-          .single();
-
-        if (createError || !newPlanner) {
-          console.error("Error creating planner:", createError);
-          toast.error("Failed to create planner");
-          return;
-        }
-
-        plannerId = newPlanner.id;
-
-        // Initialize 7 empty roles
-        const emptyRoles = Array(7)
-          .fill(null)
-          .map((_, index) => ({
-            planner_id: plannerId,
-            role_index: index,
-            name: "",
-            goal: "",
-            note: "",
-          }));
-
-        await supabase.from("roles").insert(emptyRoles);
-      } else {
-        plannerId = planner.id;
-      }
-
-      // Load roles and tasks
-      const [rolesResult, tasksResult] = await Promise.all([
-        supabase.from("roles").select("*").eq("planner_id", plannerId).order("role_index"),
-        supabase.from("tasks").select("*").eq("planner_id", plannerId),
-      ]);
-
-      if (rolesResult.error) {
-        console.error("Error loading roles:", rolesResult.error);
-        toast.error("Failed to load roles");
-        return;
-      }
-
-      if (tasksResult.error) {
-        console.error("Error loading tasks:", tasksResult.error);
-        toast.error("Failed to load tasks");
-        return;
-      }
-
-      const roles: Role[] = rolesResult.data.map((r: any) => ({
-        name: r.name,
-        goal: r.goal,
-        note: r.note,
-      }));
-
-      const tasks: Task[] = tasksResult.data.map((t: any) => ({
-        id: t.id,
-        text: t.text,
-        completed: t.completed,
-        roleIndex: t.role_index,
-        day: t.day,
-      }));
-
-      setWeekData({
-        roles,
-        tasks,
-        weekStart,
-        plannerId,
-      });
-    } catch (error) {
-      console.error("Error loading week data:", error);
-      toast.error("Failed to load week data");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function updateRole(index: number, field: keyof Role, value: string) {
-    if (!weekData.plannerId) return;
-
-    const updatedRoles = [...weekData.roles];
-    updatedRoles[index] = { ...updatedRoles[index], [field]: value };
-    setWeekData({ ...weekData, roles: updatedRoles });
-
-    // Update in database
-    const { error } = await supabase
-      .from("roles")
-      .update({ [field]: value })
-      .eq("planner_id", weekData.plannerId)
-      .eq("role_index", index);
-
-    if (error) {
-      console.error("Error updating role:", error);
-      toast.error("Failed to update role");
-    }
-  }
-
-  async function addTask(roleIndex: number, day: string) {
-    if (!weekData.plannerId) return;
-
-    const newTaskData = {
-      planner_id: weekData.plannerId,
-      role_index: roleIndex,
-      day: day,
-      text: "",
-      completed: false,
-    };
-
-    const { data, error } = await (supabase as any).from("tasks").insert(newTaskData).select().single();
-
-    if (error || !data) {
-      console.error("Error adding task:", error);
-      toast.error("Failed to add task");
-      return;
-    }
-
-    const newTask: Task = {
-      id: data.id,
-      text: data.text,
-      completed: data.completed,
-      roleIndex: data.role_index,
-      day: data.day,
-    };
-
-    setWeekData({ ...weekData, tasks: [...weekData.tasks, newTask] });
-  }
-
-  async function updateTask(taskId: string, text: string) {
-    const updatedTasks = weekData.tasks.map((task) => (task.id === taskId ? { ...task, text } : task));
-    setWeekData({ ...weekData, tasks: updatedTasks });
-
-    const { error } = await (supabase as any).from("tasks").update({ text }).eq("id", taskId);
-
-    if (error) {
-      console.error("Error updating task:", error);
-      toast.error("Failed to update task");
-    }
-  }
-
-  async function toggleTask(taskId: string) {
-    const task = weekData.tasks.find((t) => t.id === taskId);
-    if (!task) return;
-
-    const newCompleted = !task.completed;
-    const updatedTasks = weekData.tasks.map((t) => (t.id === taskId ? { ...t, completed: newCompleted } : t));
-    setWeekData({ ...weekData, tasks: updatedTasks });
-
-    const { error } = await (supabase as any).from("tasks").update({ completed: newCompleted }).eq("id", taskId);
-
-    if (error) {
-      console.error("Error toggling task:", error);
-      toast.error("Failed to update task");
-      return;
-    }
-
-    if (newCompleted) {
-      const randomMessage = CELEBRATION_MESSAGES[Math.floor(Math.random() * CELEBRATION_MESSAGES.length)];
-      setCelebration(randomMessage);
-      setTimeout(() => setCelebration(null), 3000);
-    }
-  }
-
-  async function deleteTask(taskId: string) {
-    const updatedTasks = weekData.tasks.filter((t) => t.id !== taskId);
-    setWeekData({ ...weekData, tasks: updatedTasks });
-
-    const { error } = await (supabase as any).from("tasks").delete().eq("id", taskId);
-
-    if (error) {
-      console.error("Error deleting task:", error);
-      toast.error("Failed to delete task");
-    }
-  }
-
-  function changeWeek(direction: "prev" | "next") {
-    const current = parseLocalDate(currentWeekStart);
-    const newDate = new Date(current);
-    newDate.setDate(current.getDate() + (direction === "next" ? 7 : -7));
-    setCurrentWeekStart(formatLocalDate(newDate));
-  }
-
-  function handleDragStart(e: React.DragEvent, roleIndex: number) {
-    setDraggedRoleIndex(roleIndex);
-    e.dataTransfer.effectAllowed = "move";
-  }
-
-  function handleDragOver(e: React.DragEvent) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  }
-
-  async function handleDrop(e: React.DragEvent, targetIndex: number) {
-    e.preventDefault();
-
-    if (draggedRoleIndex === null || draggedRoleIndex === targetIndex || !weekData.plannerId) {
-      setDraggedRoleIndex(null);
-      return;
-    }
-
-    const newRoles = [...weekData.roles];
-    const [draggedRole] = newRoles.splice(draggedRoleIndex, 1);
-    newRoles.splice(targetIndex, 0, draggedRole);
-
-    const newTasks = weekData.tasks.map((task) => {
-      if (task.roleIndex === draggedRoleIndex) {
-        return { ...task, roleIndex: targetIndex };
-      } else if (draggedRoleIndex < targetIndex && task.roleIndex > draggedRoleIndex && task.roleIndex <= targetIndex) {
-        return { ...task, roleIndex: task.roleIndex - 1 };
-      } else if (draggedRoleIndex > targetIndex && task.roleIndex >= targetIndex && task.roleIndex < draggedRoleIndex) {
-        return { ...task, roleIndex: task.roleIndex + 1 };
-      }
-      return task;
+export default function WeeklyPlanner({ weeklyPlans, userId, onOpenTutorial, onOpenFeedback, onPlanCreatedOrUpdated }: WeeklyPlannerProps) {
+    const [currentWeekStart, setCurrentWeekStart] = useState<string>(() => {
+        const monday = getMonday(new Date());
+        return formatLocaleDate(monday);
     });
 
-    setWeekData({ ...weekData, roles: newRoles, tasks: newTasks });
-    setDraggedRoleIndex(null);
+    const [roles, setRoles] = useState<RoleState[]>([]);
+    const [isCreatingNewPlan, setIsCreatingNewPlan] = useState(false);
+    const [planCreationError, setPlanCreationError] = useState<string | null>(null);
+    const [planCreationSuccess, setPlanCreationSuccess] = useState(false);
+    const [showAlert, setShowAlert] = useState(false); // State cho AlertDialog
 
-    // Update roles in database
-    const roleUpdates = newRoles.map((role, index) =>
-      (supabase as any)
-        .from("roles")
-        .update({
-          name: role.name,
-          goal: role.goal,
-          note: role.note,
-          role_index: index,
-        })
-        .eq("planner_id", weekData.plannerId!)
-        .eq("role_index", index),
-    );
+    // Tính toán ngày bắt đầu và kết thúc tuần hiện tại
+    const { start, end, weekDates } = useMemo(() => {
+        const startDate = new Date(currentWeekStart.split('/').reverse().join('-')); // Chuyển dd/mm/yyyy về yyyy-mm-dd để tạo Date
+        const endDate = subDays(addDays(startDate, 7), 1);
+        
+        // Tạo danh sách các ngày trong tuần
+        const dates: { day: string, date: string, isToday: boolean }[] = [];
+        for (let i = 0; i < 7; i++) {
+            const date = addDays(startDate, i);
+            dates.push({
+                day: daysOfWeek[i],
+                date: formatLocaleDate(date),
+                isToday: isToday(date),
+            });
+        }
 
-    await Promise.all(roleUpdates);
+        return {
+            start: format(startDate, 'dd/MM'),
+            end: format(endDate, 'dd/MM'),
+            weekDates: dates
+        };
+    }, [currentWeekStart]);
 
-    // Update tasks in database
-    const taskUpdates = newTasks.map((task) =>
-      (supabase as any).from("tasks").update({ role_index: task.roleIndex }).eq("id", task.id),
-    );
+    // Lọc ra WeeklyPlan cho tuần hiện tại
+    const currentPlan: WeeklyPlan | undefined = useMemo(() => {
+        return weeklyPlans.find(plan => 
+            isSameWeek(
+                new Date(plan.week_start_date), 
+                new Date(currentWeekStart.split('/').reverse().join('-')),
+                { weekStartsOn: 1 }
+            )
+        );
+    }, [weeklyPlans, currentWeekStart]);
 
-    await Promise.all(taskUpdates);
-    toast.success("Role order updated!");
-  }
+    // Thiết lập vai trò ban đầu khi component mount hoặc khi chuyển tuần/tải plan
+    useEffect(() => {
+        if (currentPlan) {
+            // Tải vai trò từ plan hiện tại
+            const loadedRoles: RoleState[] = currentPlan.roles.map(role => {
+                const tasks: { [day: string]: TaskForm[] } = {};
+                daysOfWeek.forEach(day => {
+                    const dayTasks: Task[] = role.tasks.filter(t => t.day.toLowerCase() === day.toLowerCase());
+                    tasks[day] = dayTasks.map(t => ({
+                        text: t.task_description,
+                        completed: t.is_completed,
+                    }));
+                });
 
-  const totalTasks = weekData.tasks.length;
-  const completedTasks = weekData.tasks.filter((t) => t.completed).length;
-  const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+                return {
+                    name: role.role_name,
+                    goal: role.weekly_goal,
+                    notes: role.notes,
+                    tasks: tasks,
+                };
+            });
+            // Thêm một ô nhập trống nếu tất cả tasks rỗng để dễ dàng thêm mới
+            const sanitizedRoles = loadedRoles.map(role => {
+                const newTasks = { ...role.tasks };
+                daysOfWeek.forEach(day => {
+                    // Lọc ra các task có nội dung để đếm, bỏ qua các task rỗng ban đầu được thêm vào
+                    const actualTasks = newTasks[day].filter(t => t.text.trim() !== '');
+                    
+                    // Nếu không có task nào hoặc chỉ có 1 task rỗng được thêm tự động, thêm 1 task rỗng vào cuối để người dùng nhập
+                    if (actualTasks.length === 0) {
+                        newTasks[day] = [{ text: '', completed: false }];
+                    }
+                });
+                return { ...role, tasks: newTasks };
+            });
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5">
-        <p className="text-lg">Loading your planner...</p>
-      </div>
-    );
-  }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-2 sm:p-4 md:p-8">
-      <div className="max-w-[1800px] mx-auto">
-        <div className="text-center mb-4 sm:mb-6 md:mb-8">
-          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-2 sm:mb-3">
-            <span className="bg-gradient-to-r from-pink-400 to-green-300 bg-clip-text text-transparent">
-              ✨ Weekly Planner ✨
-            </span>
-          </h1>
+            setRoles(sanitizedRoles.length > 0 ? sanitizedRoles : createInitialRoles());
+            setIsCreatingNewPlan(false); // Đảm bảo giao diện không ở trạng thái tạo plan khi đã có plan
+        } else {
+            // Nếu không có plan cho tuần này
+            setRoles(createInitialRoles());
+            // Chỉ hiển thị nút "Bắt đầu lập Plan" nếu đã có plan cũ.
+            // Nếu là lần đầu tiên (weeklyPlans.length === 0), mặc định cho phép nhập.
+            if (weeklyPlans.length > 0) {
+                setIsCreatingNewPlan(false); 
+            } else {
+                setIsCreatingNewPlan(true); // Nếu chưa có plan nào, coi như đang ở trạng thái tạo plan
+            }
+        }
+        // Reset thông báo lỗi/thành công khi chuyển tuần
+        setPlanCreationError(null);
+        setPlanCreationSuccess(false);
+    }, [currentPlan, weeklyPlans]);
 
-          <div className="flex items-center justify-center gap-2 sm:gap-4 mb-3 sm:mb-4">
-            <Button variant="ghost" size="icon" onClick={() => changeWeek("prev")} className="hover:bg-primary/10">
-              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-            </Button>
+    // Hàm tạo roles mặc định
+    const createInitialRoles = () => {
+        return [
+            { name: "Sự nghiệp", goal: "Mục tiêu hàng tuần cho sự nghiệp của bạn...", notes: "Ghi chú...", tasks: createEmptyTasks() },
+            { name: "Phát triển bản thân", goal: "Mục tiêu hàng tuần cho bản thân...", notes: "Ghi chú...", tasks: createEmptyTasks() },
+            { name: "Sức khỏe", goal: "Mục tiêu hàng tuần cho sức khỏe...", notes: "Ghi chú...", tasks: createEmptyTasks() },
+            { name: "Gia đình/Quan hệ", goal: "Mục tiêu hàng tuần cho gia đình...", notes: "Ghi chú...", tasks: createEmptyTasks() },
+            { name: "Tài chính", goal: "Mục tiêu hàng tuần cho tài chính...", notes: "Ghi chú...", tasks: createEmptyTasks() },
+        ];
+    };
 
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              <span className="text-base sm:text-lg md:text-2xl font-semibold text-foreground">
-                Week of: {formatDateRange(currentWeekStart)}
-              </span>
-            </div>
+    // Hàm tạo tasks rỗng cho các ngày trong tuần
+    const createEmptyTasks = () => {
+        const emptyTasks: { [day: string]: TaskForm[] } = {};
+        daysOfWeek.forEach(day => {
+            emptyTasks[day] = [{ text: '', completed: false }];
+        });
+        return emptyTasks;
+    };
+    
+    // --- Xử lý sự kiện tuần ---
+    const goToPreviousWeek = () => {
+        const newDate = subDays(new Date(currentWeekStart.split('/').reverse().join('-')), 7);
+        setCurrentWeekStart(formatLocaleDate(getMonday(newDate)));
+        // Không reset isCreatingNewPlan ở đây, nó sẽ được reset trong useEffect khi currentPlan thay đổi
+    };
 
-            <Button variant="ghost" size="icon" onClick={() => changeWeek("next")} className="hover:bg-primary/10">
-              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
-            </Button>
-          </div>
+    const goToNextWeek = () => {
+        const newDate = addDays(new Date(currentWeekStart.split('/').reverse().join('-')), 7);
+        setCurrentWeekStart(formatLocaleDate(getMonday(newDate)));
+        // Không reset isCreatingNewPlan ở đây
+    };
 
-          <p className="text-xs sm:text-sm md:text-base text-muted-foreground italic mb-3 sm:mb-4">
-            Keep important things important
-          </p>
+    const goToCurrentWeek = () => {
+        setCurrentWeekStart(formatLocaleDate(getMonday(new Date())));
+        // Không reset isCreatingNewPlan ở đây
+    };
 
-          <div className="flex items-center justify-center gap-2 sm:gap-3 text-xs sm:text-sm">
-            <span className="text-muted-foreground">
-              {completedTasks} of {totalTasks} tasks completed
-            </span>
-            <span className="font-semibold text-primary">{completionPercentage}%</span>
-          </div>
-          <div className="w-full max-w-md mx-auto mt-2 bg-muted rounded-full h-2 overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-500"
-              style={{ width: `${completionPercentage}%` }}
-            />
-          </div>
-        </div>
+    // --- Xử lý sự kiện Roles & Tasks ---
+    const handleRoleChange = (index: number, field: keyof RoleState, value: string) => {
+        setRoles(prevRoles => {
+            const newRoles = [...prevRoles];
+            (newRoles[index] as any)[field] = value;
+            return newRoles;
+        });
+        // Clear success/error message khi bắt đầu thay đổi
+        setPlanCreationError(null);
+        setPlanCreationSuccess(false);
+    };
 
-        {celebration && (
-          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none">
-            <div className="text-3xl sm:text-4xl md:text-6xl font-bold text-primary animate-bounce flex items-center gap-2 sm:gap-4">
-              <PartyPopper className="w-8 h-8 sm:w-10 sm:h-10 md:w-16 md:h-16" />
-              {celebration}
-              <PartyPopper className="w-8 h-8 sm:w-10 sm:h-10 md:w-16 md:h-16" />
-            </div>
-          </div>
-        )}
+    const handleTaskChange = (roleIndex: number, day: string, taskIndex: number, newText: string) => {
+        setRoles(prevRoles => {
+            const newRoles = [...prevRoles];
+            newRoles[roleIndex].tasks[day][taskIndex].text = newText;
+            return newRoles;
+        });
+        // Clear success/error message
+        setPlanCreationError(null);
+        setPlanCreationSuccess(false);
+    };
 
-        <Card className="overflow-x-auto shadow-2xl border-primary/20">
-          <div className="min-w-[2400px]">
-            <div className="grid grid-cols-61 gap-0 border-b border-border/50">
-              <div className="col-span-6 p-2 sm:p-3 bg-primary/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
-                Role
-              </div>
-              <div className="col-span-8 p-2 sm:p-3 bg-secondary/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
-                Weekly Goals
-              </div>
-              <div className="col-span-5 p-2 sm:p-3 bg-accent/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
-                Notes
-              </div>
-              {DAYS.map((day) => (
-                <div
-                  key={day}
-                  className="col-span-6 p-2 sm:p-3 bg-muted/30 font-semibold text-xs sm:text-sm text-center border-r border-border/50"
-                >
-                  {day}
-                </div>
-              ))}
-            </div>
+    const handleTaskToggle = (roleIndex: number, day: string, taskIndex: number) => {
+        setRoles(prevRoles => {
+            const newRoles = [...prevRoles];
+            newRoles[roleIndex].tasks[day][taskIndex].completed = !newRoles[roleIndex].tasks[day][taskIndex].completed;
+            return newRoles;
+        });
+         // Clear success/error message
+         setPlanCreationError(null);
+         setPlanCreationSuccess(false);
+    };
 
-            {weekData.roles.map((role, roleIndex) => (
-              <div
-                key={roleIndex}
-                className="grid grid-cols-61 gap-0 border-b border-border/30 group hover:bg-muted/20 transition-colors"
-                draggable
-                onDragStart={(e) => handleDragStart(e, roleIndex)}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, roleIndex)}
-              >
-                <div className="col-span-6 p-2 sm:p-3 bg-card border-r border-border/30 flex items-start gap-1 sm:gap-2">
-                  <div className="flex items-start gap-1 flex-1">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity cursor-move pt-2">
-                      <GripVertical className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
-                    </div>
-                    <Textarea
-                      value={role.name}
-                      onChange={(e) => updateRole(roleIndex, "name", e.target.value)}
-                      placeholder={`Role ${roleIndex + 1}`}
-                      className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
-                      style={{ minHeight: "48px", overflow: "hidden" }}
-                      onInput={(e) => {
-                        const target = e.target as HTMLTextAreaElement;
-                        target.style.height = "auto";
-                        target.style.height = target.scrollHeight + "px";
-                      }}
+    const handleAddTask = (roleIndex: number, day: string) => {
+        setRoles(prevRoles => {
+            const newRoles = [...prevRoles];
+            newRoles[roleIndex].tasks[day].push({ text: '', completed: false });
+            return newRoles;
+        });
+    };
+
+    const handleRemoveTask = (roleIndex: number, day: string, taskIndex: number) => {
+        setRoles(prevRoles => {
+            const newRoles = [...prevRoles];
+            newRoles[roleIndex].tasks[day].splice(taskIndex, 1);
+            // Đảm bảo luôn có ít nhất 1 ô nhập nếu danh sách tasks rỗng (hoặc chỉ còn các task rỗng)
+            const hasRealTasks = newRoles[roleIndex].tasks[day].some(t => t.text.trim() !== '');
+            if (newRoles[roleIndex].tasks[day].length === 0 || !hasRealTasks) {
+                newRoles[roleIndex].tasks[day].push({ text: '', completed: false });
+            }
+            return newRoles;
+        });
+         // Clear success/error message
+         setPlanCreationError(null);
+         setPlanCreationSuccess(false);
+    };
+
+    const handleAddRole = () => {
+        setRoles(prevRoles => [
+            ...prevRoles,
+            { name: "Vai trò mới", goal: "Mục tiêu...", notes: "Ghi chú...", tasks: createEmptyTasks() }
+        ]);
+    };
+
+    const handleRemoveRole = (index: number) => {
+        // Chỉ cho phép xóa nếu có nhiều hơn 1 vai trò
+        if (roles.length > 1) {
+            setRoles(prevRoles => prevRoles.filter((_, i) => i !== index));
+            // Clear success/error message
+            setPlanCreationError(null);
+            setPlanCreationSuccess(false);
+        } else {
+            setShowAlert(true); // Hiển thị cảnh báo nếu cố gắng xóa vai trò cuối cùng
+        }
+    };
+
+    // Tính toán tiến độ
+    const { totalTasks, completedTasks, completionPercentage } = useMemo(() => {
+        let total = 0;
+        let completed = 0;
+
+        roles.forEach(role => {
+            Object.values(role.tasks).forEach(tasks => {
+                tasks.forEach(task => {
+                    // Chỉ tính những tasks có nội dung
+                    if (task.text.trim() !== '') {
+                        total++;
+                        if (task.completed) {
+                            completed++;
+                        }
+                    }
+                });
+            });
+        });
+
+        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+        return { totalTasks: total, completedTasks: completed, completionPercentage: percentage };
+    }, [roles]);
+
+
+    // --- HÀM MỚI: Xử lý tạo Weekly Plan (Tạo mới/Cập nhật) ---
+    const handleCreateWeeklyPlan = async () => {
+        if (!userId) {
+            setPlanCreationError("Không tìm thấy ID người dùng. Vui lòng đăng nhập lại.");
+            return;
+        }
+        
+        // Lọc các vai trò có ý nghĩa (tên vai trò không rỗng)
+        const relevantRoles = roles.filter(r => r.name.trim() !== '');
+        if (relevantRoles.length === 0) {
+            setPlanCreationError("Vui lòng điền ít nhất một Vai trò.");
+            return;
+        }
+
+        // 1. Chuyển đổi trạng thái Roles sang định dạng Plan Roles
+        const planRoles: Role[] = relevantRoles
+            .map(role => {
+            const allTasks: Task[] = [];
+            
+            // Lặp qua từng ngày để lấy tasks
+            Object.entries(role.tasks).forEach(([day, taskForms]) => {
+                const dayTasks: Task[] = taskForms
+                    .filter(tf => tf.text.trim() !== '') // Loại bỏ tasks rỗng
+                    .map(tf => ({
+                        task_description: tf.text.trim(),
+                        is_completed: tf.completed,
+                        day: day, // Thêm trường day
+                    }));
+                allTasks.push(...dayTasks);
+            });
+
+            return {
+                role_name: role.name.trim(),
+                weekly_goal: role.goal.trim(),
+                notes: role.notes.trim(),
+                tasks: allTasks,
+            };
+        });
+
+        // Dữ liệu plan gửi đi
+        const newPlan: Omit<WeeklyPlan, 'id' | 'created_at'> = {
+            user_id: userId,
+            // Đảm bảo week_start_date là ISO string của ngày thứ Hai của tuần hiện tại
+            week_start_date: new Date(currentWeekStart.split('/').reverse().join('-')).toISOString(),
+            roles: planRoles,
+        };
+
+        setIsCreatingNewPlan(true);
+        setPlanCreationError(null);
+        setPlanCreationSuccess(false);
+
+        try {
+            // Hàm createPlan có thể xử lý cả tạo mới và cập nhật
+            await createPlan(newPlan, currentPlan ? currentPlan.id : undefined); 
+            setPlanCreationSuccess(true);
+            setIsCreatingNewPlan(false);
+            
+            // Gọi hàm callback để kích hoạt fetch lại dữ liệu ở Index.tsx
+            onPlanCreatedOrUpdated(userId); 
+
+        } catch (error: any) {
+            console.error(error);
+            setPlanCreationError(`Lỗi khi lưu kế hoạch: ${error.message || "Đã xảy ra lỗi không xác định."}`);
+            setIsCreatingNewPlan(false);
+        }
+    };
+    
+    // Hàm xử lý khi người dùng muốn bắt đầu tạo plan cho tuần mới (chỉ áp dụng khi tuần đó chưa có plan)
+    const handleStartNewPlan = () => {
+        // Reset UI về roles mặc định và cho phép nhập
+        setRoles(createInitialRoles()); 
+        setPlanCreationError(null);
+        setPlanCreationSuccess(false);
+        setIsCreatingNewPlan(true); // Kích hoạt trạng thái đang tạo plan
+    };
+
+
+    // --- Component Phụ: Task Input Group ---
+    const TaskInputGroup = ({ roleIndex, day, dayData }: { roleIndex: number, day: string, dayData: { day: string, date: string, isToday: boolean } }) => (
+        <div className="flex flex-col space-y-2 p-2 min-h-[100px]">
+            {/* Lặp qua tasks của ngày đó, đảm bảo luôn có ít nhất 1 ô nhập rỗng nếu không có task nào */}
+            {roles[roleIndex].tasks[dayData.day].map((task, taskIndex) => (
+                <div key={taskIndex} className="flex items-start space-x-2">
+                    {/* Checkbox */}
+                    <button
+                        onClick={() => handleTaskToggle(roleIndex, dayData.day, taskIndex)}
+                        className={cn(
+                            "mt-2 w-5 h-5 rounded-full border-2 transition duration-200 flex items-center justify-center flex-shrink-0",
+                            task.completed
+                                ? "bg-purple-500 border-purple-600 text-white shadow-md"
+                                : "border-gray-300 hover:bg-gray-100"
+                        )}
+                        aria-label={task.completed ? "Hoàn thành" : "Chưa hoàn thành"}
+                    >
+                        {task.completed && <Check className="w-3 h-3" />}
+                    </button>
+                    {/* Input Task */}
+                    <Input
+                        type="text"
+                        placeholder="Thêm công việc..."
+                        value={task.text}
+                        onChange={(e) => handleTaskChange(roleIndex, dayData.day, taskIndex, e.target.value)}
+                        className={cn(
+                            "flex-grow min-w-0 border-none px-2 focus:ring-0 focus:border-transparent transition duration-200",
+                            task.completed ? "line-through text-gray-500 bg-gray-50" : "bg-white text-gray-800"
+                        )}
                     />
-                  </div>
+                    {/* Remove Task Button */}
+                    <Button 
+                        onClick={() => handleRemoveTask(roleIndex, dayData.day, taskIndex)}
+                        variant="ghost" 
+                        size="icon" 
+                        className="w-8 h-8 flex-shrink-0 text-gray-400 hover:text-red-500 transition duration-200"
+                        aria-label="Xóa công việc"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </Button>
                 </div>
-
-                <div className="col-span-8 p-2 sm:p-3 bg-card border-r border-border/30">
-                  <div className="space-y-2">
-                    <Textarea
-                      value={role.goal}
-                      onChange={(e) => updateRole(roleIndex, "goal", e.target.value)}
-                      placeholder="What do you want to achieve?"
-                      className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
-                      style={{ minHeight: "48px", overflow: "hidden" }}
-                      onInput={(e) => {
-                        const target = e.target as HTMLTextAreaElement;
-                        target.style.height = "auto";
-                        target.style.height = target.scrollHeight + "px";
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div className="col-span-5 p-2 sm:p-3 bg-card border-r border-border/30">
-                  <div className="space-y-2">
-                    <Textarea
-                      value={role.note}
-                      onChange={(e) => updateRole(roleIndex, "note", e.target.value)}
-                      placeholder="Notes for this role..."
-                      className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
-                      style={{ minHeight: "48px", overflow: "hidden" }}
-                      onInput={(e) => {
-                        const target = e.target as HTMLTextAreaElement;
-                        target.style.height = "auto";
-                        target.style.height = target.scrollHeight + "px";
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {DAYS.map((day) => (
-                  <div key={day} className="col-span-6 p-2 sm:p-3 bg-card border-r border-border/30">
-                    <div className="space-y-1 sm:space-y-2">
-                      {weekData.tasks
-                        .filter((task) => task.roleIndex === roleIndex && task.day === day)
-                        .map((task) => (
-                          <div key={task.id} className="flex items-start gap-1 sm:gap-2 group/task">
-                            <Checkbox
-                              checked={task.completed}
-                              onCheckedChange={() => toggleTask(task.id)}
-                              className="mt-1 flex-shrink-0"
-                            />
-                            <Textarea
-                              value={task.text}
-                              onChange={(e) => updateTask(task.id, e.target.value)}
-                              placeholder="Task..."
-                              className={`flex-1 text-xs bg-card/50 resize-none whitespace-normal break-words ${task.completed ? "line-through opacity-60" : ""}`}
-                              style={{ minHeight: "32px", overflow: "hidden" }}
-                              onInput={(e) => {
-                                const target = e.target as HTMLTextAreaElement;
-                                target.style.height = "auto";
-                                target.style.height = target.scrollHeight + "px";
-                              }}
-                            />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 flex-shrink-0"
-                              onClick={() => deleteTask(task.id)}
-                            >
-                              <span className="text-xs">×</span>
-                            </Button>
-                          </div>
-                        ))}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => addTask(roleIndex, day)}
-                        className="w-full text-xs text-muted-foreground hover:text-foreground"
-                      >
-                        + Add task
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
             ))}
-          </div>
-        </Card>
-      </div>
-    </div>
-  );
+            {/* Add Task Button - Thêm một ô nhập rỗng mới */}
+            <Button 
+                onClick={() => handleAddTask(roleIndex, dayData.day)}
+                variant="outline" 
+                size="sm" 
+                className="w-full text-purple-600 border-dashed border-purple-300 hover:bg-purple-50 transition duration-200 mt-2"
+            >
+                <Plus className="w-4 h-4 mr-2" /> Thêm task
+            </Button>
+        </div>
+    );
+
+    // --- Component Chính: Weekly Planner ---
+    return (
+        <div className="bg-white rounded-3xl shadow-2xl p-6 md:p-8 space-y-6">
+            
+            {/* Thanh Điều Hướng Tuần & Thông tin */}
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center space-y-4 md:space-y-0">
+                <div className="flex items-center space-x-4">
+                    <h2 className="text-3xl font-extrabold text-purple-700 flex items-center">
+                        <span role="img" aria-label="sparkles" className="text-2xl mr-2">✨</span>
+                        Weekly Planner
+                        <span role="img" aria-label="sparkles" className="text-2xl ml-2">✨</span>
+                    </h2>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                    <Button onClick={onOpenTutorial} variant="link" className="text-purple-600 hover:text-purple-800 p-0">
+                        Tell me your wish
+                    </Button>
+                    <div className="text-sm text-gray-500 hidden sm:inline">|</div>
+                    <Button onClick={onOpenFeedback} variant="link" className="text-purple-600 hover:text-purple-800 p-0">
+                        Feedback
+                    </Button>
+                </div>
+            </div>
+
+            {/* Điều khiển Tuần */}
+            <div className="flex items-center justify-center space-x-4">
+                <Button onClick={goToPreviousWeek} variant="ghost" size="icon" className="text-purple-600 hover:bg-purple-50 rounded-full" aria-label="Tuần trước">
+                    <ChevronLeft className="w-6 h-6" />
+                </Button>
+                <h3 className="text-xl font-semibold text-gray-800 px-4 py-2 rounded-xl bg-purple-50 border border-purple-200 shadow-inner">
+                    Tuần: {start} - {end}
+                </h3>
+                <Button onClick={goToNextWeek} variant="ghost" size="icon" className="text-purple-600 hover:bg-purple-50 rounded-full" aria-label="Tuần sau">
+                    <ChevronRight className="w-6 h-6" />
+                </Button>
+                <Button 
+                    onClick={goToCurrentWeek} 
+                    variant="outline" 
+                    size="sm" 
+                    className={cn("text-purple-600 border-purple-300 ml-4 hidden sm:inline-flex", isSameWeek(new Date(currentWeekStart.split('/').reverse().join('-')), new Date(), { weekStartsOn: 1 }) && "bg-purple-100 font-bold")}
+                >
+                    <CornerDownLeft className="w-4 h-4 mr-2" />
+                    Tuần hiện tại
+                </Button>
+            </div>
+
+            {/* Thông báo và Thanh Tiến độ */}
+            <div className="text-center space-y-2">
+                <p className="text-lg font-medium text-gray-600 italic">
+                    Keep important things important
+                </p>
+                <div className="flex items-center justify-center space-x-2 text-sm font-semibold">
+                    <span className="text-gray-700">{completedTasks}</span>
+                    <span className="text-gray-500">of</span>
+                    <span className="text-gray-700">{totalTasks}</span>
+                    <span className="text-gray-500">tasks completed</span>
+                    <span className="text-purple-600">({completionPercentage}%)</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                    <div 
+                        className="bg-purple-500 h-2.5 rounded-full transition-all duration-500 ease-out" 
+                        style={{ width: `${completionPercentage}%` }}
+                    ></div>
+                </div>
+            </div>
+            
+            {/* THÔNG BÁO VÀ CHỨC NĂNG TẠO PLAN MỚI */}
+            {/* Hiển thị thông báo nếu không có plan và người dùng đã có ít nhất 1 plan trước đó */}
+            {!currentPlan && weeklyPlans.length > 0 && !isCreatingNewPlan && (
+                <div className="text-center p-6 bg-yellow-50 border-l-4 border-yellow-500 rounded-xl shadow-inner my-6">
+                    <p className="text-lg font-semibold text-yellow-800 mb-4">
+                        Tuần này chưa có kế hoạch!
+                    </p>
+                    <Button onClick={handleStartNewPlan} className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-xl shadow-md transition duration-300">
+                        Bắt đầu lập Plan cho Tuần này
+                    </Button>
+                </div>
+            )}
+            
+            {planCreationError && (
+                <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert">
+                    <p className="font-bold">Lỗi!</p>
+                    <p>{planCreationError}</p>
+                </div>
+            )}
+            
+            {planCreationSuccess && (
+                <div className="p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg" role="alert">
+                    <p className="font-bold">Thành công!</p>
+                    <p>Kế hoạch hàng tuần của bạn đã được lưu lại.</p>
+                </div>
+            )}
+            
+            {/* Bảng Plan chỉ hiển thị nếu có plan hoặc đang ở trạng thái tạo plan mới */}
+            {(currentPlan || isCreatingNewPlan || weeklyPlans.length === 0) && (
+                <>
+                {/* Bảng Kế Hoạch Chính */}
+                <div className="overflow-x-auto">
+                    <table className="w-full min-w-[1200px] border-separate border-spacing-y-2">
+                        <thead>
+                            <tr className="bg-purple-50/70 text-gray-700 text-sm font-semibold uppercase tracking-wider rounded-xl shadow-inner">
+                                <th className="w-[10%] p-3 text-left rounded-l-xl">Vai trò</th>
+                                <th className="w-[15%] p-3 text-left">Mục tiêu hàng tuần</th>
+                                <th className="w-[15%] p-3 text-left">Ghi chú</th>
+                                {weekDates.map((dayData) => (
+                                    <th 
+                                        key={dayData.day} 
+                                        className={cn("w-[10%] p-3 text-center", dayData.isToday ? "bg-purple-200 text-purple-800" : "")}
+                                    >
+                                        {dayData.day} <br /> 
+                                        <span className="text-xs font-normal">{dayData.date}</span>
+                                    </th>
+                                ))}
+                                <th className="w-[5%] p-3 text-center rounded-r-xl"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {roles.map((role, roleIndex) => (
+                                <tr key={roleIndex} className="bg-white shadow-md hover:shadow-lg transition duration-200 border-b border-gray-100">
+                                    
+                                    {/* Vai trò */}
+                                    <td className="p-3 align-top border-l-4 border-purple-500/80 rounded-l-xl">
+                                        <Textarea
+                                            value={role.name}
+                                            onChange={(e) => handleRoleChange(roleIndex, 'name', e.target.value)}
+                                            placeholder="Tên Vai trò..."
+                                            className="font-bold text-gray-800 text-base resize-none min-h-[50px] border-none focus:ring-0 shadow-none p-2 bg-transparent"
+                                            rows={1}
+                                        />
+                                    </td>
+                                    
+                                    {/* Mục tiêu hàng tuần */}
+                                    <td className="p-3 align-top">
+                                        <Textarea
+                                            value={role.goal}
+                                            onChange={(e) => handleRoleChange(roleIndex, 'goal', e.target.value)}
+                                            placeholder="Mục tiêu chính cần đạt được..."
+                                            className="text-sm text-gray-700 resize-none min-h-[50px] border-none focus:ring-0 shadow-none p-2 bg-transparent"
+                                            rows={2}
+                                        />
+                                    </td>
+                                    
+                                    {/* Ghi chú */}
+                                    <td className="p-3 align-top">
+                                        <Textarea
+                                            value={role.notes}
+                                            onChange={(e) => handleRoleChange(roleIndex, 'notes', e.target.value)}
+                                            placeholder="Ghi chú, nguồn cảm hứng..."
+                                            className="text-sm text-gray-500 resize-none min-h-[50px] border-none focus:ring-0 shadow-none p-2 bg-transparent"
+                                            rows={2}
+                                        />
+                                    </td>
+                                    
+                                    {/* Tasks theo ngày */}
+                                    {weekDates.map((dayData) => (
+                                        <td key={dayData.day} className={cn("p-1 align-top", dayData.isToday ? "bg-purple-50" : "")}>
+                                            <TaskInputGroup 
+                                                roleIndex={roleIndex} 
+                                                day={dayData.day} 
+                                                dayData={dayData}
+                                            />
+                                        </td>
+                                    ))}
+
+                                    {/* Xóa Role */}
+                                    <td className="p-3 align-top text-center rounded-r-xl">
+                                        <Button 
+                                            onClick={() => handleRemoveRole(roleIndex)} 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="text-gray-400 hover:text-red-500 transition duration-200"
+                                            aria-label="Xóa vai trò này"
+                                        >
+                                            <Trash2 className="w-5 h-5" />
+                                        </Button>
+                                    </td>
+                                </div>
+                            </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Nút Thêm Vai Trò và Lưu Plan */}
+                <div className="flex justify-between items-center pt-4">
+                    <Button 
+                        onClick={handleAddRole} 
+                        variant="outline" 
+                        className="border-purple-600 text-purple-600 hover:bg-purple-50 transition duration-200 rounded-full px-6"
+                    >
+                        <Plus className="w-5 h-5 mr-2" /> Thêm Vai trò
+                    </Button>
+                    
+                    <Button 
+                        onClick={handleCreateWeeklyPlan}
+                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-full px-8 py-3 shadow-lg transition duration-300"
+                        disabled={isCreatingNewPlan}
+                    >
+                        {isCreatingNewPlan ? "Đang lưu..." : "Lưu Weekly Plan"}
+                    </Button>
+                </div>
+                </>
+            )}
+            
+            {/* Alert Dialog cho lỗi xóa role */}
+            <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
+                <AlertDialogContent className="bg-white rounded-xl shadow-2xl">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-xl font-bold text-red-600">Không thể xóa</AlertDialogTitle>
+                        <AlertDialogDescription className="text-gray-700">
+                            Bạn cần phải có ít nhất một Vai trò trong Weekly Planner.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => setShowAlert(false)} className="bg-purple-600 hover:bg-purple-700">
+                            Đã hiểu
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </div>
+    );
 }
