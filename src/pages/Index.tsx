@@ -39,6 +39,9 @@ export default function Index() {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setLoading(false);
+      if (session) {
+        fetchWeeklyPlans(session.user.id);
+      }
     });
 
     // Check for existing session
