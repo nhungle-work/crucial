@@ -61,17 +61,32 @@ export default function OnboardingOverlay({ isOpen, onClose }: OnboardingOverlay
   const getHighlightPosition = () => {
     switch (currentStepData.highlight) {
       case "role":
-        return "left-[2%] top-[35%] w-[12%] h-[50%]";
+        return "left-[2%] top-[20%] w-[12%] h-[65%]";
       case "goals":
-        return "left-[15%] top-[35%] w-[18%] h-[50%]";
+        return "left-[15%] top-[20%] w-[18%] h-[65%]";
       case "notes":
-        return "left-[34%] top-[35%] w-[15%] h-[50%]";
+        return "left-[34%] top-[20%] w-[15%] h-[65%]";
       case "days":
-        return "left-[50%] top-[35%] w-[48%] h-[50%]";
+        return "left-[50%] top-[20%] w-[12%] h-[65%]"; // Only Monday column
       case "tips":
         return "left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%]";
       default:
         return "";
+    }
+  };
+
+  const getInstructionPosition = () => {
+    switch (currentStepData.highlight) {
+      case "role":
+        return "left-[8%] top-[20%]";
+      case "goals":
+        return "left-[20%] top-[15%]";
+      case "notes":
+        return "left-[35%] top-[10%]";
+      case "days":
+        return "left-[52%] top-[10%]";
+      default:
+        return "left-[50%] top-[15%] translate-x-[-50%]";
     }
   };
 
@@ -83,9 +98,9 @@ export default function OnboardingOverlay({ isOpen, onClose }: OnboardingOverlay
       {/* Highlighted area */}
       {currentStepData.highlight !== "tips" && (
         <div 
-          className={`absolute ${getHighlightPosition()} bg-background/5 border-2 border-primary rounded-lg shadow-lg animate-scale-in transition-all duration-500`}
+          className={`absolute ${getHighlightPosition()} bg-background/95 border-2 border-primary rounded-lg shadow-lg animate-scale-in transition-all duration-500`}
           style={{ 
-            boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.8)',
+            boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.85)',
           }}
         />
       )}
@@ -95,8 +110,8 @@ export default function OnboardingOverlay({ isOpen, onClose }: OnboardingOverlay
         className={`absolute ${
           currentStepData.highlight === "tips" 
             ? "left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-[90%] max-w-2xl" 
-            : "left-[50%] top-[15%] translate-x-[-50%] w-[90%] max-w-md"
-        } bg-card border border-border rounded-lg shadow-xl p-6 animate-fade-in`}
+            : `${getInstructionPosition()} w-[90%] max-w-md`
+        } bg-card border border-border rounded-lg shadow-xl p-6 animate-fade-in transition-all duration-500`}
       >
         <button
           onClick={onClose}
