@@ -45,13 +45,19 @@ const CELEBRATION_MESSAGES = [
 ];
 
 export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: WeeklyPlannerProps) {
+  (weeklyPlans, // <--- BỔ SUNG: Dữ liệu lịch trình
+    userId, // <--- BỔ SUNG: ID người dùng
+    onOpenTutorial,
+    onOpenFeedback);
   const [currentWeekStart, setCurrentWeekStart] = useState<string>(() => {
     const monday = getMonday(new Date());
     return formatLocalDate(monday);
   });
 
   const [weekData, setWeekData] = useState<WeekData>({
-    roles: Array(7).fill(null).map(() => ({ name: "", goal: "", note: "" })),
+    roles: Array(7)
+      .fill(null)
+      .map(() => ({ name: "", goal: "", note: "" })),
     tasks: [],
     weekStart: currentWeekStart,
   });
@@ -68,25 +74,25 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
   // Auto-resize all textareas when data changes
   useEffect(() => {
     const resizeAllTextareas = () => {
-      const textareas = document.querySelectorAll('textarea');
+      const textareas = document.querySelectorAll("textarea");
       textareas.forEach((textarea) => {
-        textarea.style.height = 'auto';
-        textarea.style.height = textarea.scrollHeight + 'px';
+        textarea.style.height = "auto";
+        textarea.style.height = textarea.scrollHeight + "px";
       });
     };
-    
+
     setTimeout(resizeAllTextareas, 10);
   }, [weekData]);
 
   function formatLocalDate(date: Date): string {
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
 
   function parseLocalDate(dateStr: string): Date {
-    const [year, month, day] = dateStr.split('-').map(Number);
+    const [year, month, day] = dateStr.split("-").map(Number);
     return new Date(year, month - 1, day);
   }
 
@@ -109,8 +115,10 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
   async function loadWeekData(weekStart: string) {
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
         toast.error("Please log in to access your planner");
         return;
@@ -118,14 +126,14 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
 
       // Get or create planner for this week
       let { data: planner, error: plannerError } = await supabase
-        .from('weekly_planners')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('week_start', weekStart)
+        .from("weekly_planners")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("week_start", weekStart)
         .maybeSingle();
 
       if (plannerError) {
-        console.error('Error loading planner:', plannerError);
+        console.error("Error loading planner:", plannerError);
         toast.error("Failed to load planner");
         return;
       }
@@ -135,13 +143,13 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
       if (!planner) {
         // Create new planner
         const { data: newPlanner, error: createError } = await (supabase as any)
-          .from('weekly_planners')
+          .from("weekly_planners")
           .insert({ user_id: user.id, week_start: weekStart })
-          .select('id')
+          .select("id")
           .single();
 
         if (createError || !newPlanner) {
-          console.error('Error creating planner:', createError);
+          console.error("Error creating planner:", createError);
           toast.error("Failed to create planner");
           return;
         }
@@ -149,56 +157,51 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
         plannerId = newPlanner.id;
 
         // Initialize 7 empty roles
-        const emptyRoles = Array(7).fill(null).map((_, index) => ({
-          planner_id: plannerId,
-          role_index: index,
-          name: '',
-          goal: '',
-          note: ''
-        }));
+        const emptyRoles = Array(7)
+          .fill(null)
+          .map((_, index) => ({
+            planner_id: plannerId,
+            role_index: index,
+            name: "",
+            goal: "",
+            note: "",
+          }));
 
-        await supabase.from('roles').insert(emptyRoles);
+        await supabase.from("roles").insert(emptyRoles);
       } else {
         plannerId = planner.id;
       }
 
       // Load roles and tasks
       const [rolesResult, tasksResult] = await Promise.all([
-        supabase
-          .from('roles')
-          .select('*')
-          .eq('planner_id', plannerId)
-          .order('role_index'),
-        supabase
-          .from('tasks')
-          .select('*')
-          .eq('planner_id', plannerId)
+        supabase.from("roles").select("*").eq("planner_id", plannerId).order("role_index"),
+        supabase.from("tasks").select("*").eq("planner_id", plannerId),
       ]);
 
       if (rolesResult.error) {
-        console.error('Error loading roles:', rolesResult.error);
+        console.error("Error loading roles:", rolesResult.error);
         toast.error("Failed to load roles");
         return;
       }
 
       if (tasksResult.error) {
-        console.error('Error loading tasks:', tasksResult.error);
+        console.error("Error loading tasks:", tasksResult.error);
         toast.error("Failed to load tasks");
         return;
       }
 
-      const roles: Role[] = rolesResult.data.map(r => ({
+      const roles: Role[] = rolesResult.data.map((r) => ({
         name: r.name,
         goal: r.goal,
-        note: r.note
+        note: r.note,
       }));
 
-      const tasks: Task[] = tasksResult.data.map(t => ({
+      const tasks: Task[] = tasksResult.data.map((t) => ({
         id: t.id,
         text: t.text,
         completed: t.completed,
         roleIndex: t.role_index,
-        day: t.day
+        day: t.day,
       }));
 
       setWeekData({
@@ -207,9 +210,8 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
         weekStart,
         plannerId,
       });
-
     } catch (error) {
-      console.error('Error loading week data:', error);
+      console.error("Error loading week data:", error);
       toast.error("Failed to load week data");
     } finally {
       setLoading(false);
@@ -225,13 +227,13 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
 
     // Update in database
     const { error } = await supabase
-      .from('roles')
+      .from("roles")
       .update({ [field]: value })
-      .eq('planner_id', weekData.plannerId)
-      .eq('role_index', index);
+      .eq("planner_id", weekData.plannerId)
+      .eq("role_index", index);
 
     if (error) {
-      console.error('Error updating role:', error);
+      console.error("Error updating role:", error);
       toast.error("Failed to update role");
     }
   }
@@ -243,18 +245,14 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
       planner_id: weekData.plannerId,
       role_index: roleIndex,
       day: day,
-      text: '',
-      completed: false
+      text: "",
+      completed: false,
     };
 
-    const { data, error } = await (supabase as any)
-      .from('tasks')
-      .insert(newTaskData)
-      .select()
-      .single();
+    const { data, error } = await (supabase as any).from("tasks").insert(newTaskData).select().single();
 
     if (error || !data) {
-      console.error('Error adding task:', error);
+      console.error("Error adding task:", error);
       toast.error("Failed to add task");
       return;
     }
@@ -264,46 +262,36 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
       text: data.text,
       completed: data.completed,
       roleIndex: data.role_index,
-      day: data.day
+      day: data.day,
     };
 
     setWeekData({ ...weekData, tasks: [...weekData.tasks, newTask] });
   }
 
   async function updateTask(taskId: string, text: string) {
-    const updatedTasks = weekData.tasks.map(task =>
-      task.id === taskId ? { ...task, text } : task
-    );
+    const updatedTasks = weekData.tasks.map((task) => (task.id === taskId ? { ...task, text } : task));
     setWeekData({ ...weekData, tasks: updatedTasks });
 
-    const { error } = await (supabase as any)
-      .from('tasks')
-      .update({ text })
-      .eq('id', taskId);
+    const { error } = await (supabase as any).from("tasks").update({ text }).eq("id", taskId);
 
     if (error) {
-      console.error('Error updating task:', error);
+      console.error("Error updating task:", error);
       toast.error("Failed to update task");
     }
   }
 
   async function toggleTask(taskId: string) {
-    const task = weekData.tasks.find(t => t.id === taskId);
+    const task = weekData.tasks.find((t) => t.id === taskId);
     if (!task) return;
 
     const newCompleted = !task.completed;
-    const updatedTasks = weekData.tasks.map(t =>
-      t.id === taskId ? { ...t, completed: newCompleted } : t
-    );
+    const updatedTasks = weekData.tasks.map((t) => (t.id === taskId ? { ...t, completed: newCompleted } : t));
     setWeekData({ ...weekData, tasks: updatedTasks });
 
-    const { error } = await (supabase as any)
-      .from('tasks')
-      .update({ completed: newCompleted })
-      .eq('id', taskId);
+    const { error } = await (supabase as any).from("tasks").update({ completed: newCompleted }).eq("id", taskId);
 
     if (error) {
-      console.error('Error toggling task:', error);
+      console.error("Error toggling task:", error);
       toast.error("Failed to update task");
       return;
     }
@@ -316,16 +304,13 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
   }
 
   async function deleteTask(taskId: string) {
-    const updatedTasks = weekData.tasks.filter(t => t.id !== taskId);
+    const updatedTasks = weekData.tasks.filter((t) => t.id !== taskId);
     setWeekData({ ...weekData, tasks: updatedTasks });
 
-    const { error } = await (supabase as any)
-      .from('tasks')
-      .delete()
-      .eq('id', taskId);
+    const { error } = await (supabase as any).from("tasks").delete().eq("id", taskId);
 
     if (error) {
-      console.error('Error deleting task:', error);
+      console.error("Error deleting task:", error);
       toast.error("Failed to delete task");
     }
   }
@@ -349,7 +334,7 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
 
   async function handleDrop(e: React.DragEvent, targetIndex: number) {
     e.preventDefault();
-    
+
     if (draggedRoleIndex === null || draggedRoleIndex === targetIndex || !weekData.plannerId) {
       setDraggedRoleIndex(null);
       return;
@@ -359,7 +344,7 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
     const [draggedRole] = newRoles.splice(draggedRoleIndex, 1);
     newRoles.splice(targetIndex, 0, draggedRole);
 
-    const newTasks = weekData.tasks.map(task => {
+    const newTasks = weekData.tasks.map((task) => {
       if (task.roleIndex === draggedRoleIndex) {
         return { ...task, roleIndex: targetIndex };
       } else if (draggedRoleIndex < targetIndex && task.roleIndex > draggedRoleIndex && task.roleIndex <= targetIndex) {
@@ -376,25 +361,22 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
     // Update roles in database
     const roleUpdates = newRoles.map((role, index) =>
       (supabase as any)
-        .from('roles')
-        .update({ 
+        .from("roles")
+        .update({
           name: role.name,
           goal: role.goal,
           note: role.note,
-          role_index: index 
+          role_index: index,
         })
-        .eq('planner_id', weekData.plannerId!)
-        .eq('role_index', index)
+        .eq("planner_id", weekData.plannerId!)
+        .eq("role_index", index),
     );
 
     await Promise.all(roleUpdates);
 
     // Update tasks in database
-    const taskUpdates = newTasks.map(task =>
-      (supabase as any)
-        .from('tasks')
-        .update({ role_index: task.roleIndex })
-        .eq('id', task.id)
+    const taskUpdates = newTasks.map((task) =>
+      (supabase as any).from("tasks").update({ role_index: task.roleIndex }).eq("id", task.id),
     );
 
     await Promise.all(taskUpdates);
@@ -402,7 +384,7 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
   }
 
   const totalTasks = weekData.tasks.length;
-  const completedTasks = weekData.tasks.filter(t => t.completed).length;
+  const completedTasks = weekData.tasks.filter((t) => t.completed).length;
   const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   if (loading) {
@@ -424,12 +406,7 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
           </h1>
 
           <div className="flex items-center justify-center gap-2 sm:gap-4 mb-3 sm:mb-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => changeWeek("prev")}
-              className="hover:bg-primary/10"
-            >
+            <Button variant="ghost" size="icon" onClick={() => changeWeek("prev")} className="hover:bg-primary/10">
               <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
 
@@ -440,12 +417,7 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
               </span>
             </div>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => changeWeek("next")}
-              className="hover:bg-primary/10"
-            >
+            <Button variant="ghost" size="icon" onClick={() => changeWeek("next")} className="hover:bg-primary/10">
               <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
           </div>
@@ -519,11 +491,11 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
                       onChange={(e) => updateRole(roleIndex, "name", e.target.value)}
                       placeholder={`Role ${roleIndex + 1}`}
                       className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
-                      style={{ minHeight: '48px', overflow: 'hidden' }}
+                      style={{ minHeight: "48px", overflow: "hidden" }}
                       onInput={(e) => {
                         const target = e.target as HTMLTextAreaElement;
-                        target.style.height = 'auto';
-                        target.style.height = target.scrollHeight + 'px';
+                        target.style.height = "auto";
+                        target.style.height = target.scrollHeight + "px";
                       }}
                     />
                   </div>
@@ -536,11 +508,11 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
                       onChange={(e) => updateRole(roleIndex, "goal", e.target.value)}
                       placeholder="What do you want to achieve?"
                       className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
-                      style={{ minHeight: '48px', overflow: 'hidden' }}
+                      style={{ minHeight: "48px", overflow: "hidden" }}
                       onInput={(e) => {
                         const target = e.target as HTMLTextAreaElement;
-                        target.style.height = 'auto';
-                        target.style.height = target.scrollHeight + 'px';
+                        target.style.height = "auto";
+                        target.style.height = target.scrollHeight + "px";
                       }}
                     />
                   </div>
@@ -553,11 +525,11 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
                       onChange={(e) => updateRole(roleIndex, "note", e.target.value)}
                       placeholder="Notes for this role..."
                       className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
-                      style={{ minHeight: '48px', overflow: 'hidden' }}
+                      style={{ minHeight: "48px", overflow: "hidden" }}
                       onInput={(e) => {
                         const target = e.target as HTMLTextAreaElement;
-                        target.style.height = 'auto';
-                        target.style.height = target.scrollHeight + 'px';
+                        target.style.height = "auto";
+                        target.style.height = target.scrollHeight + "px";
                       }}
                     />
                   </div>
@@ -579,12 +551,12 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
                               value={task.text}
                               onChange={(e) => updateTask(task.id, e.target.value)}
                               placeholder="Task..."
-                              className={`flex-1 text-xs bg-card/50 resize-none whitespace-normal break-words ${task.completed ? 'line-through opacity-60' : ''}`}
-                              style={{ minHeight: '32px', overflow: 'hidden' }}
+                              className={`flex-1 text-xs bg-card/50 resize-none whitespace-normal break-words ${task.completed ? "line-through opacity-60" : ""}`}
+                              style={{ minHeight: "32px", overflow: "hidden" }}
                               onInput={(e) => {
                                 const target = e.target as HTMLTextAreaElement;
-                                target.style.height = 'auto';
-                                target.style.height = target.scrollHeight + 'px';
+                                target.style.height = "auto";
+                                target.style.height = target.scrollHeight + "px";
                               }}
                             />
                             <Button
