@@ -48,7 +48,9 @@ export default function Index() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
-
+      if (session) {
+        fetchWeeklyPlans(session.user.id);
+      }
       // Check if user has seen onboarding
       if (session?.user) {
         const hasSeenOnboarding = localStorage.getItem(`onboarding_seen_${session.user.id}`);
