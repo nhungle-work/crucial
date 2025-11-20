@@ -86,7 +86,7 @@ export default function WeeklyPlanner({ weeklyPlans, userId, onOpenTutorial, onO
     const currentPlan: WeeklyPlan | undefined = useMemo(() => {
         return weeklyPlans.find(plan => 
             isSameWeek(
-                new Date(plan.week_start_date), 
+                new Date(plan.week_start), 
                 new Date(currentWeekStart.split('/').reverse().join('-')),
                 { weekStartsOn: 1 }
             )
@@ -95,22 +95,24 @@ export default function WeeklyPlanner({ weeklyPlans, userId, onOpenTutorial, onO
 
     // Thiết lập vai trò ban đầu khi component mount hoặc khi chuyển tuần/tải plan
     useEffect(() => {
-        if (currentPlan) {
+        if (currentPlan && currentPlan.roles) {
             // Tải vai trò từ plan hiện tại
             const loadedRoles: RoleState[] = currentPlan.roles.map(role => {
                 const tasks: { [day: string]: TaskForm[] } = {};
                 daysOfWeek.forEach(day => {
-                    const dayTasks: Task[] = role.tasks.filter(t => t.day.toLowerCase() === day.toLowerCase());
+                    const dayTasks = currentPlan.tasks?.filter(
+                        t => t.day.toLowerCase() === day.toLowerCase() && t.role_index === role.role_index
+                    ) || [];
                     tasks[day] = dayTasks.map(t => ({
-                        text: t.task_description,
-                        completed: t.is_completed,
+                        text: t.text,
+                        completed: t.completed,
                     }));
                 });
 
                 return {
-                    name: role.role_name,
-                    goal: role.weekly_goal,
-                    notes: role.notes,
+                    name: role.name,
+                    goal: role.goal,
+                    notes: role.note,
                     tasks: tasks,
                 };
             });
@@ -302,45 +304,40 @@ export default function WeeklyPlanner({ weeklyPlans, userId, onOpenTutorial, onO
         }
 
         // 1. Chuyển đổi trạng thái Roles sang định dạng Plan Roles
-        const planRoles: Role[] = relevantRoles
-            .map(role => {
-            const allTasks: Task[] = [];
-            
-            // Lặp qua từng ngày để lấy tasks
-            Object.entries(role.tasks).forEach(([day, taskForms]) => {
-                const dayTasks: Task[] = taskForms
-                    .filter(tf => tf.text.trim() !== '') // Loại bỏ tasks rỗng
-                    .map(tf => ({
-                        task_description: tf.text.trim(),
-                        is_completed: tf.completed,
-                        day: day, // Thêm trường day
-                    }));
-                allTasks.push(...dayTasks);
-            });
+        const planRolesData = relevantRoles.map((role, index) => ({
+            name: role.name.trim(),
+            goal: role.goal.trim(),
+            note: role.notes.trim(),
+            role_index: index,
+        }));
 
-            return {
-                role_name: role.name.trim(),
-                weekly_goal: role.goal.trim(),
-                notes: role.notes.trim(),
-                tasks: allTasks,
-            };
+        // 2. Tạo danh sách tasks
+        const planTasksData: Array<{ role_index: number; day: string; text: string; completed: boolean }> = [];
+        relevantRoles.forEach((role, roleIndex) => {
+            Object.entries(role.tasks).forEach(([day, taskForms]) => {
+                taskForms
+                    .filter(tf => tf.text.trim() !== '')
+                    .forEach(tf => {
+                        planTasksData.push({
+                            role_index: roleIndex,
+                            day: day,
+                            text: tf.text.trim(),
+                            completed: tf.completed,
+                        });
+                    });
+            });
         });
 
         // Dữ liệu plan gửi đi
-        const newPlan: Omit<WeeklyPlan, 'id' | 'created_at'> = {
-            user_id: userId,
-            // Đảm bảo week_start_date là ISO string của ngày thứ Hai của tuần hiện tại
-            week_start_date: new Date(currentWeekStart.split('/').reverse().join('-')).toISOString(),
-            roles: planRoles,
-        };
+        const weekStartISO = new Date(currentWeekStart.split('/').reverse().join('-')).toISOString().split('T')[0];
 
         setIsCreatingNewPlan(true);
         setPlanCreationError(null);
         setPlanCreationSuccess(false);
 
         try {
-            // Hàm createPlan có thể xử lý cả tạo mới và cập nhật
-            await createPlan(newPlan, currentPlan ? currentPlan.id : undefined); 
+            // Hàm createPlan với 4 tham số
+            await createPlan(userId, weekStartISO, planRolesData, planTasksData);
             setPlanCreationSuccess(true);
             setIsCreatingNewPlan(false);
             
@@ -592,11 +589,10 @@ export default function WeeklyPlanner({ weeklyPlans, userId, onOpenTutorial, onO
                                             className="text-gray-400 hover:text-red-500 transition duration-200"
                                             aria-label="Xóa vai trò này"
                                         >
-                                            <Trash2 className="w-5 h-5" />
+                                    <Trash2 className="w-5 h-5" />
                                         </Button>
                                     </td>
-                                </div>
-                            </tr>
+                                </tr>
                             ))}
                         </tbody>
                     </table>
