@@ -28,9 +28,13 @@ interface WeekData {
   plannerId?: string;
 }
 
+// BƯỚC 1: Cập nhật interface Props để nhận dữ liệu
 interface WeeklyPlannerProps {
   onOpenTutorial: () => void;
   onOpenFeedback: () => void;
+  // BỔ SUNG PROPS TỪ INDEX.TSX
+  weeklyPlans: any[]; // Dữ liệu đã fetch từ Supabase
+  userId: string; // ID của người dùng đã đăng nhập
 }
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -44,11 +48,9 @@ const CELEBRATION_MESSAGES = [
   "🎯 Nailed it!",
 ];
 
-export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: WeeklyPlannerProps) {
-  (weeklyPlans, // <--- BỔ SUNG: Dữ liệu lịch trình
-    userId, // <--- BỔ SUNG: ID người dùng
-    onOpenTutorial,
-    onOpenFeedback);
+export default function WeeklyPlanner({ weeklyPlans, userId, onOpenTutorial, onOpenFeedback }: WeeklyPlannerProps) {
+  // DÒNG CODE CŨ BỊ LỖI CÚ PHÁP ĐÃ ĐƯỢC XÓA Ở ĐÂY
+
   const [currentWeekStart, setCurrentWeekStart] = useState<string>(() => {
     const monday = getMonday(new Date());
     return formatLocalDate(monday);
@@ -66,10 +68,44 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
   const [celebration, setCelebration] = useState<string | null>(null);
   const [draggedRoleIndex, setDraggedRoleIndex] = useState<number | null>(null);
 
-  // Load week data from database
+  // BƯỚC 3: Thêm useEffect để gán dữ liệu tải về từ index.tsx vào weekData
   useEffect(() => {
-    loadWeekData(currentWeekStart);
-  }, [currentWeekStart]);
+    const currentWeekPlan = weeklyPlans.find((p) => p.week_start === currentWeekStart);
+
+    if (currentWeekPlan) {
+      // Nếu tìm thấy dữ liệu cho tuần hiện tại trong props đã tải về
+      const roles: Role[] = currentWeekPlan.roles_data.map((r: any) => ({
+        name: r.name,
+        goal: r.goal,
+        note: r.note,
+      }));
+
+      const tasks: Task[] = currentWeekPlan.tasks_data.map((t: any) => ({
+        id: t.id,
+        text: t.text,
+        completed: t.completed,
+        roleIndex: t.role_index,
+        day: t.day,
+      }));
+
+      setWeekData({
+        roles,
+        tasks,
+        weekStart: currentWeekStart,
+        plannerId: currentWeekPlan.id, // Dùng plannerId từ data đã tải
+      });
+      setLoading(false);
+      console.log(`[WeeklyPlanner] Data found for ${currentWeekStart}`, currentWeekPlan);
+    } else {
+      // Nếu không tìm thấy trong data đã tải, chuyển sang load từ DB (logic cũ)
+      // Điều này đảm bảo khi chuyển tuần, nó vẫn hoạt động.
+      // Tuy nhiên, loadWeekData() sẽ xử lý logic này, nên ta chỉ cần đảm bảo loadWeekData chạy đúng.
+      // Chỉ gọi loadWeekData nếu weeklyPlans đã được tải (để tránh race condition)
+      if (weeklyPlans.length === 0 || weeklyPlans.some((p) => p.week_start === currentWeekStart) === false) {
+        loadWeekData(currentWeekStart);
+      }
+    }
+  }, [currentWeekStart, weeklyPlans]); // Chạy lại khi tuần thay đổi HOẶC weeklyPlans thay đổi
 
   // Auto-resize all textareas when data changes
   useEffect(() => {
@@ -113,14 +149,19 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
   }
 
   async function loadWeekData(weekStart: string) {
+    // FIX NHỎ: Tránh load nếu data đã có sẵn trong props (đã xử lý ở useEffect trên)
+    const existingPlan = weeklyPlans.find((p) => p.week_start === weekStart);
+    if (existingPlan) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
 
-      if (!user) {
-        toast.error("Please log in to access your planner");
+      // FIX LỖI: Không cần gọi lại supabase.auth.getUser() vì đã có userId từ props
+      if (!userId) {
+        toast.error("User ID is missing. Please log in.");
         return;
       }
 
@@ -128,7 +169,7 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
       let { data: planner, error: plannerError } = await supabase
         .from("weekly_planners")
         .select("id")
-        .eq("user_id", user.id)
+        .eq("user_id", userId) // Dùng userId từ props
         .eq("week_start", weekStart)
         .maybeSingle();
 
@@ -144,7 +185,7 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
         // Create new planner
         const { data: newPlanner, error: createError } = await (supabase as any)
           .from("weekly_planners")
-          .insert({ user_id: user.id, week_start: weekStart })
+          .insert({ user_id: userId, week_start: weekStart }) // Dùng userId từ props
           .select("id")
           .single();
 
@@ -190,13 +231,13 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
         return;
       }
 
-      const roles: Role[] = rolesResult.data.map((r) => ({
+      const roles: Role[] = rolesResult.data.map((r: any) => ({
         name: r.name,
         goal: r.goal,
         note: r.note,
       }));
 
-      const tasks: Task[] = tasksResult.data.map((t) => ({
+      const tasks: Task[] = tasksResult.data.map((t: any) => ({
         id: t.id,
         text: t.text,
         completed: t.completed,
