@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { MessageSquareHeart } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -19,16 +21,47 @@ interface FeedbackDialogProps {
 export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
   const [rating, setRating] = useState([7]);
   const [feedback, setFeedback] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = () => {
-    // For now, just log the feedback
-    console.log("Rating:", rating[0]);
-    console.log("Feedback:", feedback);
+  const handleSubmit = async () => {
+    if (!feedback.trim()) {
+      toast.error("Please share your feedback before submitting");
+      return;
+    }
+
+    setSubmitting(true);
     
-    // Reset and close
-    setRating([7]);
-    setFeedback("");
-    onOpenChange(false);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error("You must be logged in to submit feedback");
+        return;
+      }
+
+      const { error } = await supabase.functions.invoke("send-feedback", {
+        body: {
+          rating: rating[0],
+          feedback: feedback,
+          userEmail: user.email,
+          username: user.user_metadata?.username || user.email?.split("@")[0],
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success("Thank you for your feedback! 💖");
+      
+      // Reset and close
+      setRating([7]);
+      setFeedback("");
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      toast.error("Failed to submit feedback. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -82,12 +115,12 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
           </div>
 
           <div className="flex gap-3 justify-end pt-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit}>
+            <Button onClick={handleSubmit} disabled={submitting}>
               <MessageSquareHeart className="mr-2 h-4 w-4" />
-              Submit Wish
+              {submitting ? "Sending..." : "Submit Wish"}
             </Button>
           </div>
         </div>

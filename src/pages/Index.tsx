@@ -15,25 +15,6 @@ export default function Index() {
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
-  // BỔ SUNG: State để lưu trữ dữ liệu lịch trình hàng tuần
-  const [weeklyPlans, setWeeklyPlans] = useState<any[]>([]);
-
-  // BỔ SUNG: Hàm tải dữ liệu Weekly Planner từ Supabase
-  const fetchWeeklyPlans = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("weekly_plans") // <--- Lovable cần xác nhận tên bảng này
-        .select("*")
-        .eq("user_id", userId);
-
-      if (error) throw error;
-
-      // Cập nhật state với dữ liệu nhận được
-      setWeeklyPlans(data || []);
-    } catch (error) {
-      console.error("Lỗi khi tải dữ liệu Weekly Planner:", error);
-    }
-  };
 
   useEffect(() => {
     // Set up auth state listener
@@ -42,20 +23,12 @@ export default function Index() {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setLoading(false);
-      // FIX LỖI 1: Tải dữ liệu ngay sau khi đăng nhập/thay đổi session
-      if (session) {
-        fetchWeeklyPlans(session.user.id);
-      }
     });
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
-      // FIX LỖI 2: Tải dữ liệu khi có phiên làm việc cũ (khắc phục lỗi mất data khi user đăng nhập lại)
-      if (session) {
-        fetchWeeklyPlans(session.user.id);
-      }
 
       // Check if user has seen onboarding
       if (session?.user) {
@@ -125,9 +98,6 @@ export default function Index() {
         </div>
       </div>
       <WeeklyPlanner
-        // BƯỚC 4: TRUYỀN DỮ LIỆU ĐÃ TẢI XUỐNG COMPONENT CON
-        weeklyPlans={weeklyPlans}
-        userId={session.user.id}
         onOpenTutorial={() => setOnboardingOpen(true)}
         onOpenFeedback={() => setFeedbackOpen(true)}
       />
