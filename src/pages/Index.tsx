@@ -17,22 +17,21 @@ export default function Index() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [weeklyPlans, setWeeklyPlans] = useState<any[]>([]);
 
-  **const fetchWeeklyPlans = async (userId: string) => {**
-** try {**
-** const { data, error } = await supabase**
-** .from('weekly_plans')** // <--- Lovable cần xác nhận tên bảng này
-** .select('*')**
-** .eq('user_id', userId);**
-** **
-** if (error) throw error;**
+  const fetchWeeklyPlans = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("weekly_plans") // <--- Lovable cần xác nhận tên bảng này
+        .select("*")
+        .eq("user_id", userId);
 
-** setWeeklyPlans(data || []);**
+      if (error) throw error;
 
-** } catch (error) {**
-** console.error("Lỗi khi tải dữ liệu Weekly Planner:", error);**
-** }**
-**};**
-  
+      setWeeklyPlans(data || []);
+    } catch (error) {
+      console.error("Lỗi khi tải dữ liệu Weekly Planner:", error);
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener
     const {
