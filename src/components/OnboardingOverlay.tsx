@@ -68,13 +68,13 @@ export default function OnboardingOverlay({ isOpen, onClose }: OnboardingOverlay
   const getHighlightPosition = () => {
     switch (currentStepData.highlight) {
       case "role":
-        return "left-[2%] top-[20%] w-[12%] h-[65%]";
+        return "left-[2%] top-[22%] w-[9.5%] h-[60%]";
       case "goals":
-        return "left-[15%] top-[20%] w-[18%] h-[65%]";
+        return "left-[12%] top-[22%] w-[13%] h-[60%]";
       case "notes":
-        return "left-[34%] top-[20%] w-[15%] h-[65%]";
+        return "left-[25.5%] top-[22%] w-[8%] h-[60%]";
       case "days":
-        return "left-[50%] top-[20%] w-[12%] h-[65%]"; // Only Monday column
+        return "left-[34%] top-[22%] w-[9.5%] h-[60%]"; // Only Monday column
       case "tips":
         return "left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%]";
       default:
@@ -85,13 +85,13 @@ export default function OnboardingOverlay({ isOpen, onClose }: OnboardingOverlay
   const getInstructionPosition = () => {
     switch (currentStepData.highlight) {
       case "role":
-        return "left-[16%] top-[25%]";
+        return "left-[13%] top-[25%]";
       case "goals":
-        return "left-[40%] top-[25%]";
+        return "left-[28%] top-[25%]";
       case "notes":
-        return "left-[52%] top-[25%]";
+        return "left-[36%] top-[25%]";
       case "days":
-        return "left-[15%] top-[25%]";
+        return "left-[10%] top-[25%]";
       default:
         return "left-[50%] top-[15%] translate-x-[-50%]";
     }
@@ -100,14 +100,15 @@ export default function OnboardingOverlay({ isOpen, onClose }: OnboardingOverlay
   return (
     <div className="fixed inset-0 z-[100]">
       {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/80 animate-fade-in" />
+      <div className="absolute inset-0 bg-black/85 animate-fade-in" />
       
-      {/* Highlighted area */}
+      {/* Highlighted area - transparent so content is visible */}
       {currentStepData.highlight !== "tips" && (
         <div 
-          className={`absolute ${getHighlightPosition()} bg-background/95 border-2 border-primary rounded-lg shadow-lg animate-scale-in transition-all duration-500`}
+          className={`absolute ${getHighlightPosition()} border-4 border-primary rounded-lg animate-scale-in transition-all duration-500`}
           style={{ 
-            boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.85)',
+            boxShadow: '0 0 40px 10px rgba(var(--primary-rgb, 255, 182, 193), 0.6), inset 0 0 80px 20px rgba(255, 255, 255, 0.15)',
+            backgroundColor: 'rgba(255, 255, 255, 0.15)',
           }}
         />
       )}
