@@ -119,6 +119,11 @@ export default function Index() {
         </div>
       </div>
       <WeeklyPlanner onOpenTutorial={() => setOnboardingOpen(true)} onOpenFeedback={() => setFeedbackOpen(true)} />
+      weeklyPlans={weeklyPlans}        
+      userId={session.user.id}
+        onOpenTutorial={() => setOnboardingOpen(true)}
+        onOpenFeedback={() => setFeedbackOpen(true)}
+      />
       <UserProfileDialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen} user={session.user} />
       <OnboardingOverlay isOpen={onboardingOpen} onClose={() => handleOnboardingClose(false)} />
       <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
