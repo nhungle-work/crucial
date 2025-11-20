@@ -78,13 +78,13 @@ export default function OnboardingOverlay({ isOpen, onClose }: OnboardingOverlay
   const getInstructionPosition = () => {
     switch (currentStepData.highlight) {
       case "role":
-        return "left-[8%] top-[20%]";
+        return "left-[16%] top-[25%]";
       case "goals":
-        return "left-[20%] top-[15%]";
+        return "left-[40%] top-[25%]";
       case "notes":
-        return "left-[35%] top-[10%]";
+        return "left-[52%] top-[25%]";
       case "days":
-        return "left-[52%] top-[10%]";
+        return "left-[15%] top-[25%]";
       default:
         return "left-[50%] top-[15%] translate-x-[-50%]";
     }
