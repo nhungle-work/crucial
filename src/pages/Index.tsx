@@ -71,21 +71,41 @@ export default function Index() {
 
   return (
     <div>
-      <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
-        <button
-          onClick={() => setProfileDialogOpen(true)}
-          className="flex flex-col items-end text-sm hover:bg-accent/50 p-2 rounded-md transition-colors cursor-pointer"
-        >
-          <span className="font-semibold text-foreground">
-            {session.user.user_metadata?.username || session.user.email?.split('@')[0]}
-          </span>
-          <span className="text-muted-foreground text-xs">
-            {session.user.email}
-          </span>
-        </button>
-        <Button variant="outline" onClick={handleLogout}>
-          Logout
-        </Button>
+      <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            onClick={() => setOnboardingOpen(true)}
+            className="text-sm"
+          >
+            <span className="mr-2">?</span>
+            How to design your week with Crucial
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => setFeedbackOpen(true)}
+            className="text-sm"
+          >
+            <span className="mr-2">✨</span>
+            Tell me your wish
+          </Button>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setProfileDialogOpen(true)}
+            className="flex flex-col items-end text-sm hover:bg-accent/50 p-2 rounded-md transition-colors cursor-pointer"
+          >
+            <span className="font-semibold text-foreground">
+              {session.user.user_metadata?.username || session.user.email?.split('@')[0]}
+            </span>
+            <span className="text-muted-foreground text-xs">
+              {session.user.email}
+            </span>
+          </button>
+          <Button variant="outline" onClick={handleLogout}>
+            Logout
+          </Button>
+        </div>
       </div>
       <WeeklyPlanner 
         onOpenTutorial={() => setOnboardingOpen(true)}

@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Sparkles, PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical, HelpCircle, Wand2 } from "lucide-react";
+import { Sparkles, PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -416,29 +416,7 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-2 sm:p-4 md:p-8">
       <div className="max-w-[1800px] mx-auto">
-        <div className="text-center mb-4 sm:mb-6 md:mb-8 relative">
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onOpenTutorial}
-              className="gap-2 text-xs sm:text-sm"
-            >
-              <HelpCircle className="h-4 w-4" />
-              <span className="hidden lg:inline">How to design your week with Crucial</span>
-              <span className="lg:hidden">Crucial 101</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onOpenFeedback}
-              className="gap-2 text-xs sm:text-sm"
-            >
-              <Wand2 className="h-4 w-4" />
-              Tell me your wish
-            </Button>
-          </div>
-          
+        <div className="text-center mb-4 sm:mb-6 md:mb-8">
           <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-2 sm:mb-3">
             <span className="bg-gradient-to-r from-pink-400 to-green-300 bg-clip-text text-transparent">
               ✨ Weekly Planner ✨
