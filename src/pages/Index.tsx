@@ -15,7 +15,7 @@ export default function Index() {
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const [weeklyPlans, setWeeklyPlans] = useState<any[]>([]);
+  **const [weeklyPlans, setWeeklyPlans] = useState<any[]>([]);**
 
   const fetchWeeklyPlans = async (userId: string) => {
     try {
