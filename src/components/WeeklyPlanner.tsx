@@ -423,6 +423,15 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
             </span>
           </h1>
 
+          <Button
+            variant="ghost"
+            onClick={onOpenFeedback}
+            className="text-sm mb-4"
+          >
+            <span className="mr-2">✨</span>
+            Tell me your wish
+          </Button>
+
           <div className="flex items-center justify-center gap-2 sm:gap-4 mb-3 sm:mb-4">
             <Button
               variant="ghost"

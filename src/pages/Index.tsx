@@ -72,24 +72,14 @@ export default function Index() {
   return (
     <div>
       <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            onClick={() => setOnboardingOpen(true)}
-            className="text-sm"
-          >
-            <span className="mr-2">?</span>
-            How to design your week with Crucial
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => setFeedbackOpen(true)}
-            className="text-sm"
-          >
-            <span className="mr-2">✨</span>
-            Tell me your wish
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          onClick={() => setOnboardingOpen(true)}
+          className="text-sm"
+        >
+          <span className="mr-2">?</span>
+          How to design your week with Crucial
+        </Button>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setProfileDialogOpen(true)}
