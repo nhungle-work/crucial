@@ -2,14 +2,17 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
+import { useTheme } from "next-themes";
 import WeeklyPlanner from "@/components/WeeklyPlanner";
 import { Button } from "@/components/ui/button";
 import { UserProfileDialog } from "@/components/UserProfileDialog";
 import OnboardingOverlay from "@/components/OnboardingOverlay";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
+import { Moon, Sun } from "lucide-react";
 
 export default function Index() {
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
@@ -83,6 +86,13 @@ export default function Index() {
           </Button>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          >
+            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
           <button
             onClick={() => setProfileDialogOpen(true)}
             className="flex flex-col items-end text-sm hover:bg-accent/50 p-2 rounded-md transition-colors cursor-pointer"
