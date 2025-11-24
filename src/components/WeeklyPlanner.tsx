@@ -588,7 +588,7 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
                     onClick={() => toggleRolePriority(roleIndex)}
                     className={`h-7 w-7 flex-shrink-0 transition-all duration-300 ${
                       role.isPriority 
-                        ? 'text-primary hover:text-primary/80 animate-pulse' 
+                        ? 'text-primary hover:text-primary/80' 
                         : 'text-muted-foreground hover:text-primary'
                     }`}
                     title={role.isPriority ? 'Remove from top 3' : 'Mark as top 3'}
@@ -615,7 +615,7 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
                 </div>
 
                 <div className={`col-span-8 p-2 sm:p-3 border-r border-border/30 ${
-                  role.isPriority ? 'bg-secondary/30' : 'bg-card'
+                  role.isPriority ? 'bg-secondary/50 dark:bg-secondary/30' : 'bg-card'
                 }`}>
                   <div className="space-y-2">
                     <Textarea
@@ -634,7 +634,7 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
                 </div>
 
                 <div className={`col-span-5 p-2 sm:p-3 border-r border-border/30 ${
-                  role.isPriority ? 'bg-accent/30' : 'bg-card'
+                  role.isPriority ? 'bg-accent/50 dark:bg-accent/30' : 'bg-card'
                 }`}>
                   <div className="space-y-2">
                     <Textarea
@@ -663,7 +663,7 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
                           <div 
                             key={task.id} 
                             className={`flex items-start gap-1 sm:gap-2 group/task p-1.5 rounded-md transition-all duration-300 ${
-                              task.isPinned ? 'border-2 border-accent bg-accent/40 shadow-md shadow-accent/30' : ''
+                              task.isPinned ? 'border-2 border-accent bg-accent/40 dark:bg-accent/60 shadow-md shadow-accent/30 dark:shadow-accent/50' : ''
                             }`}
                           >
                             <Checkbox
@@ -677,7 +677,7 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
                               onClick={() => toggleTaskPin(task.id, day)}
                               className={`h-5 w-5 flex-shrink-0 mt-0.5 transition-all duration-300 ${
                                 task.isPinned 
-                                  ? 'text-accent-foreground hover:text-accent-foreground/80 animate-pulse' 
+                                  ? 'text-accent-foreground hover:text-accent-foreground/80' 
                                   : 'text-muted-foreground/50 hover:text-accent-foreground'
                               }`}
                               title={task.isPinned ? 'Unpin task' : 'Pin as important'}
