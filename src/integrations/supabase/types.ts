@@ -43,6 +43,7 @@ export type Database = {
           created_at: string | null
           goal: string
           id: string
+          is_priority: boolean
           name: string
           note: string
           planner_id: string
@@ -53,6 +54,7 @@ export type Database = {
           created_at?: string | null
           goal?: string
           id?: string
+          is_priority?: boolean
           name?: string
           note?: string
           planner_id: string
@@ -63,6 +65,7 @@ export type Database = {
           created_at?: string | null
           goal?: string
           id?: string
+          is_priority?: boolean
           name?: string
           note?: string
           planner_id?: string
@@ -85,6 +88,7 @@ export type Database = {
           created_at: string | null
           day: string
           id: string
+          is_pinned: boolean
           planner_id: string
           role_index: number
           text: string
@@ -95,6 +99,7 @@ export type Database = {
           created_at?: string | null
           day: string
           id?: string
+          is_pinned?: boolean
           planner_id: string
           role_index: number
           text?: string
@@ -105,6 +110,7 @@ export type Database = {
           created_at?: string | null
           day?: string
           id?: string
+          is_pinned?: boolean
           planner_id?: string
           role_index?: number
           text?: string
