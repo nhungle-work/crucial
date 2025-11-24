@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
+import { PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical, Star, Pin } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -11,6 +11,7 @@ interface Role {
   name: string;
   goal: string;
   note: string;
+  isPriority: boolean;
 }
 
 interface Task {
@@ -19,6 +20,7 @@ interface Task {
   completed: boolean;
   roleIndex: number;
   day: string;
+  isPinned: boolean;
 }
 
 interface WeekData {
@@ -51,7 +53,7 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
   });
 
   const [weekData, setWeekData] = useState<WeekData>({
-    roles: Array(7).fill(null).map(() => ({ name: "", goal: "", note: "" })),
+    roles: Array(7).fill(null).map(() => ({ name: "", goal: "", note: "", isPriority: false })),
     tasks: [],
     weekStart: currentWeekStart,
   });
@@ -154,7 +156,8 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
           role_index: index,
           name: '',
           goal: '',
-          note: ''
+          note: '',
+          is_priority: false
         }));
 
         await supabase.from('roles').insert(emptyRoles);
@@ -190,7 +193,8 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
       const roles: Role[] = rolesResult.data.map(r => ({
         name: r.name,
         goal: r.goal,
-        note: r.note
+        note: r.note,
+        isPriority: r.is_priority || false
       }));
 
       const tasks: Task[] = tasksResult.data.map(t => ({
@@ -198,7 +202,8 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
         text: t.text,
         completed: t.completed,
         roleIndex: t.role_index,
-        day: t.day
+        day: t.day,
+        isPinned: t.is_pinned || false
       }));
 
       setWeekData({
@@ -216,17 +221,27 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
     }
   }
 
-  async function updateRole(index: number, field: keyof Role, value: string) {
+  async function updateRole(index: number, field: keyof Role, value: string | boolean) {
     if (!weekData.plannerId) return;
 
     const updatedRoles = [...weekData.roles];
     updatedRoles[index] = { ...updatedRoles[index], [field]: value };
     setWeekData({ ...weekData, roles: updatedRoles });
 
+    // Map field names to database column names
+    const dbFieldMap: Record<string, string> = {
+      'name': 'name',
+      'goal': 'goal',
+      'note': 'note',
+      'isPriority': 'is_priority'
+    };
+    
+    const dbField = dbFieldMap[field] || field;
+
     // Update in database
     const { error } = await supabase
       .from('roles')
-      .update({ [field]: value })
+      .update({ [dbField]: value })
       .eq('planner_id', weekData.plannerId)
       .eq('role_index', index);
 
@@ -264,7 +279,8 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
       text: data.text,
       completed: data.completed,
       roleIndex: data.role_index,
-      day: data.day
+      day: data.day,
+      isPinned: false
     };
 
     setWeekData({ ...weekData, tasks: [...weekData.tasks, newTask] });
@@ -330,6 +346,55 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
     }
   }
 
+  async function toggleRolePriority(roleIndex: number) {
+    if (!weekData.plannerId) return;
+
+    const role = weekData.roles[roleIndex];
+    const newPriority = !role.isPriority;
+
+    // Count current priority roles
+    const priorityCount = weekData.roles.filter(r => r.isPriority).length;
+
+    // If trying to add a 4th priority role, prevent it
+    if (newPriority && priorityCount >= 3) {
+      toast.error("You can only highlight 3 roles at a time");
+      return;
+    }
+
+    await updateRole(roleIndex, 'isPriority', newPriority);
+  }
+
+  async function toggleTaskPin(taskId: string, day: string) {
+    const task = weekData.tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const newPinned = !task.isPinned;
+
+    // Count current pinned tasks for this day
+    const pinnedCount = weekData.tasks.filter(t => t.day === day && t.isPinned).length;
+
+    // If trying to add a 4th pinned task, prevent it
+    if (newPinned && pinnedCount >= 3) {
+      toast.error("You can only pin 3 tasks per day");
+      return;
+    }
+
+    const updatedTasks = weekData.tasks.map(t =>
+      t.id === taskId ? { ...t, isPinned: newPinned } : t
+    );
+    setWeekData({ ...weekData, tasks: updatedTasks });
+
+    const { error } = await (supabase as any)
+      .from('tasks')
+      .update({ is_pinned: newPinned })
+      .eq('id', taskId);
+
+    if (error) {
+      console.error('Error toggling task pin:', error);
+      toast.error("Failed to update task");
+    }
+  }
+
   function changeWeek(direction: "prev" | "next") {
     const current = parseLocalDate(currentWeekStart);
     const newDate = new Date(current);
@@ -381,7 +446,8 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
           name: role.name,
           goal: role.goal,
           note: role.note,
-          role_index: index 
+          role_index: index,
+          is_priority: role.isPriority
         })
         .eq('planner_id', weekData.plannerId!)
         .eq('role_index', index)
@@ -503,13 +569,30 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
             {weekData.roles.map((role, roleIndex) => (
               <div
                 key={roleIndex}
-                className="grid grid-cols-61 gap-0 border-b border-border/30 group hover:bg-muted/20 transition-colors"
+                className={`grid grid-cols-61 gap-0 border-b group hover:bg-muted/20 transition-all ${
+                  role.isPriority 
+                    ? 'bg-gradient-to-r from-primary/20 via-secondary/15 to-accent/20 border-primary/40 border-2' 
+                    : 'border-border/30'
+                }`}
                 draggable
                 onDragStart={(e) => handleDragStart(e, roleIndex)}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, roleIndex)}
               >
-                <div className="col-span-6 p-2 sm:p-3 bg-card border-r border-border/30 flex items-start gap-1 sm:gap-2">
+                <div className="col-span-6 p-2 sm:p-3 bg-card/50 border-r border-border/30 flex items-start gap-1 sm:gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => toggleRolePriority(roleIndex)}
+                    className={`h-7 w-7 flex-shrink-0 transition-all ${
+                      role.isPriority 
+                        ? 'text-primary hover:text-primary/80' 
+                        : 'text-muted-foreground hover:text-primary'
+                    }`}
+                    title={role.isPriority ? 'Remove from top 3' : 'Mark as top 3'}
+                  >
+                    <Star className={`w-4 h-4 ${role.isPriority ? 'fill-current' : ''}`} />
+                  </Button>
                   <div className="flex items-start gap-1 flex-1">
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity cursor-move pt-2">
                       <GripVertical className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
@@ -564,17 +647,35 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
                 </div>
 
                 {DAYS.map((day) => (
-                  <div key={day} className="col-span-6 p-2 sm:p-3 bg-card border-r border-border/30">
+                  <div key={day} className="col-span-6 p-2 sm:p-3 bg-card/50 border-r border-border/30">
                     <div className="space-y-1 sm:space-y-2">
                       {weekData.tasks
                         .filter((task) => task.roleIndex === roleIndex && task.day === day)
                         .map((task) => (
-                          <div key={task.id} className="flex items-start gap-1 sm:gap-2 group/task">
+                          <div 
+                            key={task.id} 
+                            className={`flex items-start gap-1 sm:gap-2 group/task p-1 rounded transition-all ${
+                              task.isPinned ? 'border border-accent/50 bg-accent/10' : ''
+                            }`}
+                          >
                             <Checkbox
                               checked={task.completed}
                               onCheckedChange={() => toggleTask(task.id)}
                               className="mt-1 flex-shrink-0"
                             />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => toggleTaskPin(task.id, day)}
+                              className={`h-5 w-5 flex-shrink-0 mt-0.5 transition-all ${
+                                task.isPinned 
+                                  ? 'text-accent-foreground hover:text-accent-foreground/80' 
+                                  : 'text-muted-foreground/50 hover:text-accent-foreground'
+                              }`}
+                              title={task.isPinned ? 'Unpin task' : 'Pin as important'}
+                            >
+                              <Pin className={`w-3 h-3 ${task.isPinned ? 'fill-current' : ''}`} />
+                            </Button>
                             <Textarea
                               value={task.text}
                               onChange={(e) => updateTask(task.id, e.target.value)}
@@ -590,7 +691,7 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 flex-shrink-0"
+                              className="h-6 w-6 flex-shrink-0 opacity-0 group-hover/task:opacity-100 transition-opacity"
                               onClick={() => deleteTask(task.id)}
                             >
                               <span className="text-xs">×</span>
