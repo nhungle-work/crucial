@@ -569,9 +569,9 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
             {weekData.roles.map((role, roleIndex) => (
               <div
                 key={roleIndex}
-                className={`grid grid-cols-61 gap-0 border-b group hover:bg-muted/20 transition-all ${
+                className={`grid grid-cols-61 gap-0 border-b group hover:bg-muted/20 transition-all duration-300 ${
                   role.isPriority 
-                    ? 'bg-gradient-to-r from-primary/20 via-secondary/15 to-accent/20 border-primary/40 border-2' 
+                    ? 'bg-gradient-to-r from-primary/40 via-secondary/35 to-accent/40 border-primary border-2 shadow-lg shadow-primary/20' 
                     : 'border-border/30'
                 }`}
                 draggable
@@ -579,19 +579,21 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, roleIndex)}
               >
-                <div className="col-span-6 p-2 sm:p-3 bg-card/50 border-r border-border/30 flex items-start gap-1 sm:gap-2">
+                <div className={`col-span-6 p-2 sm:p-3 border-r border-border/30 flex items-start gap-1 sm:gap-2 ${
+                  role.isPriority ? 'bg-primary/30' : 'bg-card/50'
+                }`}>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => toggleRolePriority(roleIndex)}
-                    className={`h-7 w-7 flex-shrink-0 transition-all ${
+                    className={`h-7 w-7 flex-shrink-0 transition-all duration-300 ${
                       role.isPriority 
-                        ? 'text-primary hover:text-primary/80' 
+                        ? 'text-primary hover:text-primary/80 animate-pulse' 
                         : 'text-muted-foreground hover:text-primary'
                     }`}
                     title={role.isPriority ? 'Remove from top 3' : 'Mark as top 3'}
                   >
-                    <Star className={`w-4 h-4 ${role.isPriority ? 'fill-current' : ''}`} />
+                    <Star className={`w-4 h-4 transition-transform duration-300 ${role.isPriority ? 'fill-current scale-110' : ''}`} />
                   </Button>
                   <div className="flex items-start gap-1 flex-1">
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity cursor-move pt-2">
@@ -612,7 +614,9 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
                   </div>
                 </div>
 
-                <div className="col-span-8 p-2 sm:p-3 bg-card border-r border-border/30">
+                <div className={`col-span-8 p-2 sm:p-3 border-r border-border/30 ${
+                  role.isPriority ? 'bg-secondary/30' : 'bg-card'
+                }`}>
                   <div className="space-y-2">
                     <Textarea
                       value={role.goal}
@@ -629,7 +633,9 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
                   </div>
                 </div>
 
-                <div className="col-span-5 p-2 sm:p-3 bg-card border-r border-border/30">
+                <div className={`col-span-5 p-2 sm:p-3 border-r border-border/30 ${
+                  role.isPriority ? 'bg-accent/30' : 'bg-card'
+                }`}>
                   <div className="space-y-2">
                     <Textarea
                       value={role.note}
@@ -647,15 +653,17 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
                 </div>
 
                 {DAYS.map((day) => (
-                  <div key={day} className="col-span-6 p-2 sm:p-3 bg-card/50 border-r border-border/30">
+                  <div key={day} className={`col-span-6 p-2 sm:p-3 border-r border-border/30 ${
+                    role.isPriority ? 'bg-card/70' : 'bg-card/50'
+                  }`}>
                     <div className="space-y-1 sm:space-y-2">
                       {weekData.tasks
                         .filter((task) => task.roleIndex === roleIndex && task.day === day)
                         .map((task) => (
                           <div 
                             key={task.id} 
-                            className={`flex items-start gap-1 sm:gap-2 group/task p-1 rounded transition-all ${
-                              task.isPinned ? 'border border-accent/50 bg-accent/10' : ''
+                            className={`flex items-start gap-1 sm:gap-2 group/task p-1.5 rounded-md transition-all duration-300 ${
+                              task.isPinned ? 'border-2 border-accent bg-accent/40 shadow-md shadow-accent/30' : ''
                             }`}
                           >
                             <Checkbox
@@ -667,14 +675,14 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
                               variant="ghost"
                               size="icon"
                               onClick={() => toggleTaskPin(task.id, day)}
-                              className={`h-5 w-5 flex-shrink-0 mt-0.5 transition-all ${
+                              className={`h-5 w-5 flex-shrink-0 mt-0.5 transition-all duration-300 ${
                                 task.isPinned 
-                                  ? 'text-accent-foreground hover:text-accent-foreground/80' 
+                                  ? 'text-accent-foreground hover:text-accent-foreground/80 animate-pulse' 
                                   : 'text-muted-foreground/50 hover:text-accent-foreground'
                               }`}
                               title={task.isPinned ? 'Unpin task' : 'Pin as important'}
                             >
-                              <Pin className={`w-3 h-3 ${task.isPinned ? 'fill-current' : ''}`} />
+                              <Pin className={`w-3 h-3 transition-transform duration-300 ${task.isPinned ? 'fill-current scale-125 rotate-12' : ''}`} />
                             </Button>
                             <Textarea
                               value={task.text}
