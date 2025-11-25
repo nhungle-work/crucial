@@ -575,7 +575,7 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
           </div>
         )}
 
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr,400px] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr,380px] gap-6">
           <Card className="overflow-x-auto shadow-2xl border-primary/20">
             <div className="min-w-[2400px]">
               <div className="grid grid-cols-61 gap-0 border-b border-border/50">
