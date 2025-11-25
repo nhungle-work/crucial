@@ -575,9 +575,11 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr,380px] gap-6">
-          <Card className="overflow-x-auto shadow-2xl border-primary/20">
-            <div className="min-w-[2400px]">
+        {/* Horizontal scroll container for entire content */}
+        <div className="overflow-x-auto">
+          <div className="flex gap-6 min-w-max">
+            {/* Main Planner Table */}
+            <Card className="shadow-2xl border-primary/20 w-[2400px] flex-shrink-0">
               <div className="grid grid-cols-61 gap-0 border-b border-border/50">
                 <div className="col-span-6 p-2 sm:p-3 bg-primary/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
                   Role
@@ -751,52 +753,53 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
                   ))}
                 </div>
               ))}
-            </div>
-          </Card>
+            </Card>
 
-          <Card className="shadow-2xl border-primary/20 p-6 h-fit sticky top-4">
-            <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              Weekly Reflection
-            </h2>
-            
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-foreground">
-                  Which goals did you achieve this week?
-                </label>
-                <Textarea
-                  value={weekData.reflectionGoalsAchieved || ''}
-                  onChange={(e) => updateReflection('reflectionGoalsAchieved', e.target.value)}
-                  placeholder="Reflect on your achievements..."
-                  className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
-                />
-              </div>
+            {/* Weekly Reflection - appears when scrolling right */}
+            <Card className="shadow-2xl border-primary/20 p-6 w-[500px] flex-shrink-0 h-fit">
+              <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Weekly Reflection
+              </h2>
+              
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-foreground">
+                    Which goals did you achieve this week?
+                  </label>
+                  <Textarea
+                    value={weekData.reflectionGoalsAchieved || ''}
+                    onChange={(e) => updateReflection('reflectionGoalsAchieved', e.target.value)}
+                    placeholder="Reflect on your achievements..."
+                    className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-foreground">
-                  What challenges did you face?
-                </label>
-                <Textarea
-                  value={weekData.reflectionChallengesFaced || ''}
-                  onChange={(e) => updateReflection('reflectionChallengesFaced', e.target.value)}
-                  placeholder="Think about the obstacles you encountered..."
-                  className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-foreground">
+                    What challenges did you face?
+                  </label>
+                  <Textarea
+                    value={weekData.reflectionChallengesFaced || ''}
+                    onChange={(e) => updateReflection('reflectionChallengesFaced', e.target.value)}
+                    placeholder="Think about the obstacles you encountered..."
+                    className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-foreground">
-                  What decisions did you make? When prioritizing decisions, did you focus on what matters most?
-                </label>
-                <Textarea
-                  value={weekData.reflectionDecisionsMade || ''}
-                  onChange={(e) => updateReflection('reflectionDecisionsMade', e.target.value)}
-                  placeholder="Consider your decision-making process..."
-                  className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
-                />
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-foreground">
+                    What decisions did you make? When prioritizing decisions, did you focus on what matters most?
+                  </label>
+                  <Textarea
+                    value={weekData.reflectionDecisionsMade || ''}
+                    onChange={(e) => updateReflection('reflectionDecisionsMade', e.target.value)}
+                    placeholder="Consider your decision-making process..."
+                    className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
+                  />
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
