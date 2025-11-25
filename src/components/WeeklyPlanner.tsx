@@ -511,9 +511,9 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-2 sm:p-4 md:p-8">
-      <div className="max-w-[1800px] mx-auto">
-        <div className="text-center mb-4 sm:mb-6 md:mb-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 overflow-x-auto">
+      <div className="min-w-max p-2 sm:p-4 md:p-8">
+        <div className="text-center mb-4 sm:mb-6 md:mb-8 min-w-[2900px]">
           <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-2 sm:mb-3">
             <span className="bg-gradient-to-r from-pink-400 to-green-300 bg-clip-text text-transparent">
               Weekly Planner
@@ -576,10 +576,9 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
         )}
 
         {/* Horizontal scroll container for entire content */}
-        <div className="overflow-x-auto">
-          <div className="flex gap-6 min-w-max">
-            {/* Main Planner Table */}
-            <Card className="shadow-2xl border-primary/20 w-[2400px] flex-shrink-0">
+        <div className="flex gap-6 min-w-[2900px]">
+          {/* Main Planner Table */}
+          <Card className="shadow-2xl border-primary/20 w-[2400px] flex-shrink-0">
               <div className="grid grid-cols-61 gap-0 border-b border-border/50">
                 <div className="col-span-6 p-2 sm:p-3 bg-primary/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
                   Role
@@ -800,7 +799,6 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
               </div>
             </Card>
           </div>
-        </div>
       </div>
     </div>
   );
