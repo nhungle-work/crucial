@@ -530,8 +530,8 @@ export default function WeeklyPlanner({
       <div className="min-w-max p-2 sm:p-4 md:p-8">
         <div className="text-center mb-4 sm:mb-6 md:mb-8 min-w-[2900px] relative">
           {/* Fixed Buttons */}
-          <div className="absolute top-0 left-0 right-0 flex items-start justify-between mb-4">
-            <div className="flex flex-col gap-2">
+          <div className="absolute top-0 left-0 right-0 flex items-start justify-between mb-4 pointer-events-none">
+            <div className="flex flex-col gap-2 pointer-events-auto">
               <Button 
                 variant="outline" 
                 onClick={onOpenTutorial} 
@@ -549,7 +549,7 @@ export default function WeeklyPlanner({
                 Tell me your wish
               </Button>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 pointer-events-auto">
               <Button
                 variant="outline"
                 size="icon"
