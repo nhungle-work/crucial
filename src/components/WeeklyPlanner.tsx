@@ -28,6 +28,9 @@ interface WeekData {
   tasks: Task[];
   weekStart: string;
   plannerId?: string;
+  reflectionGoalsAchieved?: string;
+  reflectionChallengesFaced?: string;
+  reflectionDecisionsMade?: string;
 }
 
 interface WeeklyPlannerProps {
@@ -121,7 +124,7 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
       // Get or create planner for this week
       let { data: planner, error: plannerError } = await supabase
         .from('weekly_planners')
-        .select('id')
+        .select('id, reflection_goals_achieved, reflection_challenges_faced, reflection_decisions_made')
         .eq('user_id', user.id)
         .eq('week_start', weekStart)
         .maybeSingle();
@@ -211,6 +214,9 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
         tasks,
         weekStart,
         plannerId,
+        reflectionGoalsAchieved: planner?.reflection_goals_achieved || '',
+        reflectionChallengesFaced: planner?.reflection_challenges_faced || '',
+        reflectionDecisionsMade: planner?.reflection_decisions_made || '',
       });
 
     } catch (error) {
@@ -395,6 +401,31 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
     }
   }
 
+  async function updateReflection(field: 'reflectionGoalsAchieved' | 'reflectionChallengesFaced' | 'reflectionDecisionsMade', value: string) {
+    if (!weekData.plannerId) return;
+
+    setWeekData({ ...weekData, [field]: value });
+
+    // Map field names to database column names
+    const dbFieldMap = {
+      'reflectionGoalsAchieved': 'reflection_goals_achieved',
+      'reflectionChallengesFaced': 'reflection_challenges_faced',
+      'reflectionDecisionsMade': 'reflection_decisions_made'
+    };
+
+    const dbField = dbFieldMap[field];
+
+    const { error } = await supabase
+      .from('weekly_planners')
+      .update({ [dbField]: value })
+      .eq('id', weekData.plannerId);
+
+    if (error) {
+      console.error('Error updating reflection:', error);
+      toast.error("Failed to update reflection");
+    }
+  }
+
   function changeWeek(direction: "prev" | "next") {
     const current = parseLocalDate(currentWeekStart);
     const newDate = new Date(current);
@@ -544,183 +575,229 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
           </div>
         )}
 
-        <Card className="overflow-x-auto shadow-2xl border-primary/20">
-          <div className="min-w-[2400px]">
-            <div className="grid grid-cols-61 gap-0 border-b border-border/50">
-              <div className="col-span-6 p-2 sm:p-3 bg-primary/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
-                Role
-              </div>
-              <div className="col-span-8 p-2 sm:p-3 bg-secondary/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
-                Weekly Goals
-              </div>
-              <div className="col-span-5 p-2 sm:p-3 bg-accent/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
-                Notes
-              </div>
-              {DAYS.map((day) => (
-                <div
-                  key={day}
-                  className="col-span-6 p-2 sm:p-3 bg-muted/30 font-semibold text-xs sm:text-sm text-center border-r border-border/50"
-                >
-                  {day}
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr,400px] gap-6">
+          <Card className="overflow-x-auto shadow-2xl border-primary/20">
+            <div className="min-w-[2400px]">
+              <div className="grid grid-cols-61 gap-0 border-b border-border/50">
+                <div className="col-span-6 p-2 sm:p-3 bg-primary/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
+                  Role
                 </div>
-              ))}
-            </div>
-
-            {weekData.roles.map((role, roleIndex) => (
-              <div
-                key={roleIndex}
-                className={`grid grid-cols-61 gap-0 border-b group hover:bg-muted/20 transition-all duration-300 ${
-                  role.isPriority 
-                    ? 'bg-gradient-to-r from-primary/40 via-secondary/35 to-accent/40 border-primary border-2 shadow-lg shadow-primary/20' 
-                    : 'border-border/30'
-                }`}
-                draggable
-                onDragStart={(e) => handleDragStart(e, roleIndex)}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, roleIndex)}
-              >
-                <div className={`col-span-6 p-2 sm:p-3 border-r border-border/30 flex items-start gap-1 sm:gap-2 ${
-                  role.isPriority ? 'bg-primary/30' : 'bg-card/50'
-                }`}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => toggleRolePriority(roleIndex)}
-                    className={`h-7 w-7 flex-shrink-0 transition-all duration-300 ${
-                      role.isPriority 
-                        ? 'text-primary hover:text-primary/80' 
-                        : 'text-muted-foreground hover:text-primary'
-                    }`}
-                    title={role.isPriority ? 'Remove from top 3' : 'Mark as top 3'}
-                  >
-                    <Star className={`w-4 h-4 transition-transform duration-300 ${role.isPriority ? 'fill-current scale-110' : ''}`} />
-                  </Button>
-                  <div className="flex items-start gap-1 flex-1">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity cursor-move pt-2">
-                      <GripVertical className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
-                    </div>
-                    <Textarea
-                      value={role.name}
-                      onChange={(e) => updateRole(roleIndex, "name", e.target.value)}
-                      placeholder={`Role ${roleIndex + 1}`}
-                      className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
-                      style={{ minHeight: '48px', overflow: 'hidden' }}
-                      onInput={(e) => {
-                        const target = e.target as HTMLTextAreaElement;
-                        target.style.height = 'auto';
-                        target.style.height = target.scrollHeight + 'px';
-                      }}
-                    />
-                  </div>
+                <div className="col-span-8 p-2 sm:p-3 bg-secondary/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
+                  Weekly Goals
                 </div>
-
-                <div className={`col-span-8 p-2 sm:p-3 border-r border-border/30 ${
-                  role.isPriority ? 'bg-secondary/50 dark:bg-secondary/30' : 'bg-card'
-                }`}>
-                  <div className="space-y-2">
-                    <Textarea
-                      value={role.goal}
-                      onChange={(e) => updateRole(roleIndex, "goal", e.target.value)}
-                      placeholder="What do you want to achieve?"
-                      className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
-                      style={{ minHeight: '48px', overflow: 'hidden' }}
-                      onInput={(e) => {
-                        const target = e.target as HTMLTextAreaElement;
-                        target.style.height = 'auto';
-                        target.style.height = target.scrollHeight + 'px';
-                      }}
-                    />
-                  </div>
+                <div className="col-span-5 p-2 sm:p-3 bg-accent/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
+                  Notes
                 </div>
-
-                <div className={`col-span-5 p-2 sm:p-3 border-r border-border/30 ${
-                  role.isPriority ? 'bg-accent/50 dark:bg-accent/30' : 'bg-card'
-                }`}>
-                  <div className="space-y-2">
-                    <Textarea
-                      value={role.note}
-                      onChange={(e) => updateRole(roleIndex, "note", e.target.value)}
-                      placeholder="Notes for this role..."
-                      className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
-                      style={{ minHeight: '48px', overflow: 'hidden' }}
-                      onInput={(e) => {
-                        const target = e.target as HTMLTextAreaElement;
-                        target.style.height = 'auto';
-                        target.style.height = target.scrollHeight + 'px';
-                      }}
-                    />
-                  </div>
-                </div>
-
                 {DAYS.map((day) => (
-                  <div key={day} className={`col-span-6 p-2 sm:p-3 border-r border-border/30 ${
-                    role.isPriority ? 'bg-card/70' : 'bg-card/50'
-                  }`}>
-                    <div className="space-y-1 sm:space-y-2">
-                      {weekData.tasks
-                        .filter((task) => task.roleIndex === roleIndex && task.day === day)
-                        .map((task) => (
-                          <div 
-                            key={task.id} 
-                            className={`flex items-start gap-1 sm:gap-2 group/task p-1.5 rounded-md transition-all duration-300 ${
-                              task.isPinned ? 'border-2 border-accent bg-accent/40 dark:bg-accent/60 shadow-md shadow-accent/30 dark:shadow-accent/50' : ''
-                            }`}
-                          >
-                            <Checkbox
-                              checked={task.completed}
-                              onCheckedChange={() => toggleTask(task.id)}
-                              className="mt-1 flex-shrink-0"
-                            />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => toggleTaskPin(task.id, day)}
-                              className={`h-5 w-5 flex-shrink-0 mt-0.5 transition-all duration-300 ${
-                                task.isPinned 
-                                  ? 'text-accent-foreground hover:text-accent-foreground/80' 
-                                  : 'text-muted-foreground/50 hover:text-accent-foreground'
-                              }`}
-                              title={task.isPinned ? 'Unpin task' : 'Pin as important'}
-                            >
-                              <Pin className={`w-3 h-3 transition-transform duration-300 ${task.isPinned ? 'fill-current scale-125 rotate-12' : ''}`} />
-                            </Button>
-                            <Textarea
-                              value={task.text}
-                              onChange={(e) => updateTask(task.id, e.target.value)}
-                              placeholder="Task..."
-                              className={`flex-1 text-xs bg-card/50 resize-none whitespace-normal break-words ${task.completed ? 'line-through opacity-60' : ''}`}
-                              style={{ minHeight: '32px', overflow: 'hidden' }}
-                              onInput={(e) => {
-                                const target = e.target as HTMLTextAreaElement;
-                                target.style.height = 'auto';
-                                target.style.height = target.scrollHeight + 'px';
-                              }}
-                            />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 flex-shrink-0 opacity-0 group-hover/task:opacity-100 transition-opacity"
-                              onClick={() => deleteTask(task.id)}
-                            >
-                              <span className="text-xs">×</span>
-                            </Button>
-                          </div>
-                        ))}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => addTask(roleIndex, day)}
-                        className="w-full text-xs text-muted-foreground hover:text-foreground"
-                      >
-                        + Add task
-                      </Button>
-                    </div>
+                  <div
+                    key={day}
+                    className="col-span-6 p-2 sm:p-3 bg-muted/30 font-semibold text-xs sm:text-sm text-center border-r border-border/50"
+                  >
+                    {day}
                   </div>
                 ))}
               </div>
-            ))}
-          </div>
-        </Card>
+
+              {weekData.roles.map((role, roleIndex) => (
+                <div
+                  key={roleIndex}
+                  className={`grid grid-cols-61 gap-0 border-b group hover:bg-muted/20 transition-all duration-300 ${
+                    role.isPriority 
+                      ? 'bg-gradient-to-r from-primary/40 via-secondary/35 to-accent/40 border-primary border-2 shadow-lg shadow-primary/20' 
+                      : 'border-border/30'
+                  }`}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, roleIndex)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, roleIndex)}
+                >
+                  <div className={`col-span-6 p-2 sm:p-3 border-r border-border/30 flex items-start gap-1 sm:gap-2 ${
+                    role.isPriority ? 'bg-primary/30' : 'bg-card/50'
+                  }`}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => toggleRolePriority(roleIndex)}
+                      className={`h-7 w-7 flex-shrink-0 transition-all duration-300 ${
+                        role.isPriority 
+                          ? 'text-primary hover:text-primary/80' 
+                          : 'text-muted-foreground hover:text-primary'
+                      }`}
+                      title={role.isPriority ? 'Remove from top 3' : 'Mark as top 3'}
+                    >
+                      <Star className={`w-4 h-4 transition-transform duration-300 ${role.isPriority ? 'fill-current scale-110' : ''}`} />
+                    </Button>
+                    <div className="flex items-start gap-1 flex-1">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity cursor-move pt-2">
+                        <GripVertical className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+                      </div>
+                      <Textarea
+                        value={role.name}
+                        onChange={(e) => updateRole(roleIndex, "name", e.target.value)}
+                        placeholder={`Role ${roleIndex + 1}`}
+                        className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
+                        style={{ minHeight: '48px', overflow: 'hidden' }}
+                        onInput={(e) => {
+                          const target = e.target as HTMLTextAreaElement;
+                          target.style.height = 'auto';
+                          target.style.height = target.scrollHeight + 'px';
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className={`col-span-8 p-2 sm:p-3 border-r border-border/30 ${
+                    role.isPriority ? 'bg-secondary/50 dark:bg-secondary/30' : 'bg-card'
+                  }`}>
+                    <div className="space-y-2">
+                      <Textarea
+                        value={role.goal}
+                        onChange={(e) => updateRole(roleIndex, "goal", e.target.value)}
+                        placeholder="What do you want to achieve?"
+                        className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
+                        style={{ minHeight: '48px', overflow: 'hidden' }}
+                        onInput={(e) => {
+                          const target = e.target as HTMLTextAreaElement;
+                          target.style.height = 'auto';
+                          target.style.height = target.scrollHeight + 'px';
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className={`col-span-5 p-2 sm:p-3 border-r border-border/30 ${
+                    role.isPriority ? 'bg-accent/50 dark:bg-accent/30' : 'bg-card'
+                  }`}>
+                    <div className="space-y-2">
+                      <Textarea
+                        value={role.note}
+                        onChange={(e) => updateRole(roleIndex, "note", e.target.value)}
+                        placeholder="Notes for this role..."
+                        className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
+                        style={{ minHeight: '48px', overflow: 'hidden' }}
+                        onInput={(e) => {
+                          const target = e.target as HTMLTextAreaElement;
+                          target.style.height = 'auto';
+                          target.style.height = target.scrollHeight + 'px';
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {DAYS.map((day) => (
+                    <div key={day} className={`col-span-6 p-2 sm:p-3 border-r border-border/30 ${
+                      role.isPriority ? 'bg-card/70' : 'bg-card/50'
+                    }`}>
+                      <div className="space-y-1 sm:space-y-2">
+                        {weekData.tasks
+                          .filter((task) => task.roleIndex === roleIndex && task.day === day)
+                          .map((task) => (
+                            <div 
+                              key={task.id} 
+                              className={`flex items-start gap-1 sm:gap-2 group/task p-1.5 rounded-md transition-all duration-300 ${
+                                task.isPinned ? 'border-2 border-accent bg-accent/40 dark:bg-accent/60 shadow-md shadow-accent/30 dark:shadow-accent/50' : ''
+                              }`}
+                            >
+                              <Checkbox
+                                checked={task.completed}
+                                onCheckedChange={() => toggleTask(task.id)}
+                                className="mt-1 flex-shrink-0"
+                              />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => toggleTaskPin(task.id, day)}
+                                className={`h-5 w-5 flex-shrink-0 mt-0.5 transition-all duration-300 ${
+                                  task.isPinned 
+                                    ? 'text-accent-foreground hover:text-accent-foreground/80' 
+                                    : 'text-muted-foreground/50 hover:text-accent-foreground'
+                                }`}
+                                title={task.isPinned ? 'Unpin task' : 'Pin as important'}
+                              >
+                                <Pin className={`w-3 h-3 transition-transform duration-300 ${task.isPinned ? 'fill-current scale-125 rotate-12' : ''}`} />
+                              </Button>
+                              <Textarea
+                                value={task.text}
+                                onChange={(e) => updateTask(task.id, e.target.value)}
+                                placeholder="Task..."
+                                className={`flex-1 text-xs bg-card/50 resize-none whitespace-normal break-words ${task.completed ? 'line-through opacity-60' : ''}`}
+                                style={{ minHeight: '32px', overflow: 'hidden' }}
+                                onInput={(e) => {
+                                  const target = e.target as HTMLTextAreaElement;
+                                  target.style.height = 'auto';
+                                  target.style.height = target.scrollHeight + 'px';
+                                }}
+                              />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 flex-shrink-0 opacity-0 group-hover/task:opacity-100 transition-opacity"
+                                onClick={() => deleteTask(task.id)}
+                              >
+                                <span className="text-xs">×</span>
+                              </Button>
+                            </div>
+                          ))}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => addTask(roleIndex, day)}
+                          className="w-full text-xs text-muted-foreground hover:text-foreground"
+                        >
+                          + Add task
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="shadow-2xl border-primary/20 p-6 h-fit sticky top-4">
+            <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              Weekly Reflection
+            </h2>
+            
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-foreground">
+                  Which goals did you achieve this week?
+                </label>
+                <Textarea
+                  value={weekData.reflectionGoalsAchieved || ''}
+                  onChange={(e) => updateReflection('reflectionGoalsAchieved', e.target.value)}
+                  placeholder="Reflect on your achievements..."
+                  className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-foreground">
+                  What challenges did you face?
+                </label>
+                <Textarea
+                  value={weekData.reflectionChallengesFaced || ''}
+                  onChange={(e) => updateReflection('reflectionChallengesFaced', e.target.value)}
+                  placeholder="Think about the obstacles you encountered..."
+                  className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-foreground">
+                  What decisions did you make? When prioritizing decisions, did you focus on what matters most?
+                </label>
+                <Textarea
+                  value={weekData.reflectionDecisionsMade || ''}
+                  onChange={(e) => updateReflection('reflectionDecisionsMade', e.target.value)}
+                  placeholder="Consider your decision-making process..."
+                  className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
+                />
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     </div>
   );
