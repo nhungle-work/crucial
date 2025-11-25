@@ -74,8 +74,8 @@ export default function Index() {
 
   return (
     <div>
-      <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
-        <div className="flex flex-col gap-2">
+      <div className="fixed top-4 left-4 right-4 z-10 flex items-center justify-between pointer-events-none">
+        <div className="flex flex-col gap-2 pointer-events-auto">
           <Button 
             variant="outline" 
             onClick={() => setOnboardingOpen(true)} 
@@ -93,7 +93,7 @@ export default function Index() {
             Tell me your wish
           </Button>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 pointer-events-auto">
           <Button
             variant="outline"
             size="icon"
