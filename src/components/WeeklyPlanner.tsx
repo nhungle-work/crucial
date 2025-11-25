@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical, Star, Pin } from "lucide-react";
+import { PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical, Star, Pin, Moon, Sun } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -36,6 +36,12 @@ interface WeekData {
 interface WeeklyPlannerProps {
   onOpenTutorial: () => void;
   onOpenFeedback: () => void;
+  onOpenProfile: () => void;
+  onLogout: () => void;
+  username: string;
+  email: string;
+  theme: string | undefined;
+  onThemeToggle: () => void;
 }
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -49,7 +55,16 @@ const CELEBRATION_MESSAGES = [
   "🎯 Nailed it!",
 ];
 
-export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: WeeklyPlannerProps) {
+export default function WeeklyPlanner({ 
+  onOpenTutorial, 
+  onOpenFeedback,
+  onOpenProfile,
+  onLogout,
+  username,
+  email,
+  theme,
+  onThemeToggle
+}: WeeklyPlannerProps) {
   const [currentWeekStart, setCurrentWeekStart] = useState<string>(() => {
     const monday = getMonday(new Date());
     return formatLocalDate(monday);
@@ -513,8 +528,51 @@ export default function WeeklyPlanner({ onOpenTutorial, onOpenFeedback }: Weekly
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 overflow-x-auto">
       <div className="min-w-max p-2 sm:p-4 md:p-8">
-        <div className="text-center mb-4 sm:mb-6 md:mb-8 min-w-[2900px]">
-          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-2 sm:mb-3">
+        <div className="text-center mb-4 sm:mb-6 md:mb-8 min-w-[2900px] relative">
+          {/* Fixed Buttons */}
+          <div className="absolute top-0 left-0 right-0 flex items-start justify-between mb-4">
+            <div className="flex flex-col gap-2">
+              <Button 
+                variant="outline" 
+                onClick={onOpenTutorial} 
+                className="text-sm justify-start hover:bg-primary/10 hover:border-primary/30 transition-all hover:shadow-md"
+              >
+                <span className="mr-2">?</span>
+                How to design your week with Crucial
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={onOpenFeedback} 
+                className="text-sm justify-start hover:bg-secondary/10 hover:border-secondary/30 transition-all hover:shadow-md"
+              >
+                <span className="mr-2">✨</span>
+                Tell me your wish
+              </Button>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onThemeToggle}
+                className="hover:bg-accent/20 hover:border-accent/30 transition-all hover:shadow-md"
+              >
+                {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={onOpenProfile}
+                className="flex flex-col items-end text-sm hover:bg-accent/20 hover:border-primary/30 transition-all hover:shadow-md h-auto py-2 px-3"
+              >
+                <span className="font-semibold text-foreground">{username}</span>
+                <span className="text-muted-foreground text-xs">{email}</span>
+              </Button>
+              <Button variant="outline" onClick={onLogout} className="hover:bg-destructive/10 hover:border-destructive/30 transition-all hover:shadow-md">
+                Logout
+              </Button>
+            </div>
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-2 sm:mb-3 mt-24">
             <span className="bg-gradient-to-r from-pink-400 to-green-300 bg-clip-text text-transparent">
               Weekly Planner
             </span>

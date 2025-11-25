@@ -74,52 +74,15 @@ export default function Index() {
 
   return (
     <div>
-      <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
-        <div className="flex flex-col gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setOnboardingOpen(true)} 
-            className="text-sm justify-start hover:bg-primary/10 hover:border-primary/30 transition-all hover:shadow-md"
-          >
-            <span className="mr-2">?</span>
-            How to design your week with Crucial
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => setFeedbackOpen(true)} 
-            className="text-sm justify-start hover:bg-secondary/10 hover:border-secondary/30 transition-all hover:shadow-md"
-          >
-            <span className="mr-2">✨</span>
-            Tell me your wish
-          </Button>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="hover:bg-accent/20 hover:border-accent/30 transition-all hover:shadow-md"
-          >
-            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setProfileDialogOpen(true)}
-            className="flex flex-col items-end text-sm hover:bg-accent/20 hover:border-primary/30 transition-all hover:shadow-md h-auto py-2 px-3"
-          >
-            <span className="font-semibold text-foreground">
-              {session.user.user_metadata?.username || session.user.email?.split("@")[0]}
-            </span>
-            <span className="text-muted-foreground text-xs">{session.user.email}</span>
-          </Button>
-          <Button variant="outline" onClick={handleLogout} className="hover:bg-destructive/10 hover:border-destructive/30 transition-all hover:shadow-md">
-            Logout
-          </Button>
-        </div>
-      </div>
       <WeeklyPlanner
         onOpenTutorial={() => setOnboardingOpen(true)}
         onOpenFeedback={() => setFeedbackOpen(true)}
+        onOpenProfile={() => setProfileDialogOpen(true)}
+        onLogout={handleLogout}
+        username={session.user.user_metadata?.username || session.user.email?.split("@")[0] || "User"}
+        email={session.user.email || ""}
+        theme={theme}
+        onThemeToggle={() => setTheme(theme === "dark" ? "light" : "dark")}
       />
       <UserProfileDialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen} user={session.user} />
       <OnboardingOverlay isOpen={onboardingOpen} onClose={() => handleOnboardingClose(false)} />
