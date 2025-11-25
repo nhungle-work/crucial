@@ -572,7 +572,7 @@ export default function WeeklyPlanner({
             </div>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-2 sm:mb-3 mt-24">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-2 sm:mb-3 mt-20">
             <span className="bg-gradient-to-r from-pink-400 to-green-300 bg-clip-text text-transparent">
               Weekly Planner
             </span>
