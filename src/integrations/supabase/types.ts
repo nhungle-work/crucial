@@ -130,6 +130,9 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          reflection_challenges_faced: string | null
+          reflection_decisions_made: string | null
+          reflection_goals_achieved: string | null
           updated_at: string | null
           user_id: string
           week_start: string
@@ -137,6 +140,9 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          reflection_challenges_faced?: string | null
+          reflection_decisions_made?: string | null
+          reflection_goals_achieved?: string | null
           updated_at?: string | null
           user_id: string
           week_start: string
@@ -144,6 +150,9 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          reflection_challenges_faced?: string | null
+          reflection_decisions_made?: string | null
+          reflection_goals_achieved?: string | null
           updated_at?: string | null
           user_id?: string
           week_start?: string
