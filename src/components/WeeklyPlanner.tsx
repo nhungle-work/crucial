@@ -3,9 +3,20 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical, Star, Pin, Moon, Sun } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical, Star, Pin, Moon, Sun, Menu } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 
 interface Role {
   name: string;
@@ -79,6 +90,8 @@ export default function WeeklyPlanner({
   const [loading, setLoading] = useState(true);
   const [celebration, setCelebration] = useState<string | null>(null);
   const [draggedRoleIndex, setDraggedRoleIndex] = useState<number | null>(null);
+  const [selectedDay, setSelectedDay] = useState<string>("Monday");
+  const isMobile = useIsMobile();
 
   // Load week data from database
   useEffect(() => {
@@ -526,53 +539,118 @@ export default function WeeklyPlanner({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 overflow-x-auto">
-      <div className="min-w-max p-2 sm:p-4 md:p-8">
-        <div className="text-center mb-4 sm:mb-6 md:mb-8 min-w-[2900px] relative">
-          {/* Fixed Buttons */}
-          <div className="absolute top-0 left-0 right-0 flex items-start justify-between mb-4 pointer-events-none">
-            <div className="flex flex-col gap-2 pointer-events-auto">
-              <Button 
-                variant="outline" 
-                onClick={onOpenTutorial} 
-                className="text-sm justify-start hover:bg-primary/10 hover:border-primary/30 transition-all hover:shadow-md"
-              >
-                <span className="mr-2">?</span>
-                How to design your week with Crucial
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={onOpenFeedback} 
-                className="text-sm justify-start hover:bg-secondary/10 hover:border-secondary/30 transition-all hover:shadow-md"
-              >
-                <span className="mr-2">✨</span>
-                Tell me your wish
-              </Button>
-            </div>
-            <div className="flex items-center gap-3 pointer-events-auto">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+      <div className={isMobile ? "p-2" : "min-w-max p-2 sm:p-4 md:p-8 overflow-x-auto"}>
+        <div className={`text-center mb-4 sm:mb-6 md:mb-8 relative ${!isMobile && "min-w-[2900px]"}`}>
+          {/* Mobile: Drawer Menu */}
+          {isMobile && (
+            <div className="flex items-center justify-between mb-4 px-2">
+              <Drawer>
+                <DrawerTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent>
+                  <DrawerHeader>
+                    <DrawerTitle>Menu</DrawerTitle>
+                    <DrawerDescription>Access your planner options</DrawerDescription>
+                  </DrawerHeader>
+                  <div className="flex flex-col gap-2 p-4">
+                    <DrawerClose asChild>
+                      <Button 
+                        variant="outline" 
+                        onClick={onOpenTutorial} 
+                        className="justify-start"
+                      >
+                        <span className="mr-2">?</span>
+                        How to design your week with Crucial
+                      </Button>
+                    </DrawerClose>
+                    <DrawerClose asChild>
+                      <Button 
+                        variant="outline" 
+                        onClick={onOpenFeedback} 
+                        className="justify-start"
+                      >
+                        <span className="mr-2">✨</span>
+                        Tell me your wish
+                      </Button>
+                    </DrawerClose>
+                    <DrawerClose asChild>
+                      <Button
+                        variant="outline"
+                        onClick={onOpenProfile}
+                        className="justify-start"
+                      >
+                        <span className="font-semibold">{username}</span>
+                        <span className="text-muted-foreground text-xs ml-2">({email})</span>
+                      </Button>
+                    </DrawerClose>
+                    <DrawerClose asChild>
+                      <Button variant="outline" onClick={onLogout}>
+                        Logout
+                      </Button>
+                    </DrawerClose>
+                  </div>
+                </DrawerContent>
+              </Drawer>
               <Button
                 variant="outline"
                 size="icon"
                 onClick={onThemeToggle}
-                className="hover:bg-accent/20 hover:border-accent/30 transition-all hover:shadow-md"
               >
                 {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
-              <Button
-                variant="outline"
-                onClick={onOpenProfile}
-                className="flex flex-col items-end text-sm hover:bg-accent/20 hover:border-primary/30 transition-all hover:shadow-md h-auto py-2 px-3"
-              >
-                <span className="font-semibold text-foreground">{username}</span>
-                <span className="text-muted-foreground text-xs">{email}</span>
-              </Button>
-              <Button variant="outline" onClick={onLogout} className="hover:bg-destructive/10 hover:border-destructive/30 transition-all hover:shadow-md">
-                Logout
-              </Button>
             </div>
-          </div>
+          )}
+          
+          {/* Desktop: Fixed Buttons */}
+          {!isMobile && (
+            <div className="absolute top-0 left-0 right-0 flex items-start justify-between mb-4 pointer-events-none">
+              <div className="flex flex-col gap-2 pointer-events-auto">
+                <Button 
+                  variant="outline" 
+                  onClick={onOpenTutorial} 
+                  className="text-sm justify-start hover:bg-primary/10 hover:border-primary/30 transition-all hover:shadow-md"
+                >
+                  <span className="mr-2">?</span>
+                  How to design your week with Crucial
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={onOpenFeedback} 
+                  className="text-sm justify-start hover:bg-secondary/10 hover:border-secondary/30 transition-all hover:shadow-md"
+                >
+                  <span className="mr-2">✨</span>
+                  Tell me your wish
+                </Button>
+              </div>
+              <div className="flex items-center gap-3 pointer-events-auto">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={onThemeToggle}
+                  className="hover:bg-accent/20 hover:border-accent/30 transition-all hover:shadow-md"
+                >
+                  {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={onOpenProfile}
+                  className="flex flex-col items-end text-sm hover:bg-accent/20 hover:border-primary/30 transition-all hover:shadow-md h-auto py-2 px-3"
+                >
+                  <span className="font-semibold text-foreground">{username}</span>
+                  <span className="text-muted-foreground text-xs">{email}</span>
+                </Button>
+                <Button variant="outline" onClick={onLogout} className="hover:bg-destructive/10 hover:border-destructive/30 transition-all hover:shadow-md">
+                  Logout
+                </Button>
+              </div>
+            </div>
+          )}
 
-          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-2 sm:mb-3 mt-2">
+          <h1 className={`font-bold mb-2 sm:mb-3 ${isMobile ? "text-xl mt-2" : "text-2xl sm:text-3xl md:text-5xl mt-2"}`}>
             <span className="bg-gradient-to-r from-pink-400 to-green-300 bg-clip-text text-transparent">
               Weekly Planner
             </span>
@@ -590,7 +668,7 @@ export default function WeeklyPlanner({
 
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              <span className="text-base sm:text-lg md:text-2xl font-semibold text-foreground">
+              <span className={`font-semibold text-foreground ${isMobile ? "text-sm" : "text-base sm:text-lg md:text-2xl"}`}>
                 Week of: {formatDateRange(currentWeekStart)}
               </span>
             </div>
@@ -625,18 +703,173 @@ export default function WeeklyPlanner({
 
         {celebration && (
           <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none">
-            <div className="text-3xl sm:text-4xl md:text-6xl font-bold text-primary animate-bounce flex items-center gap-2 sm:gap-4">
-              <PartyPopper className="w-8 h-8 sm:w-10 sm:h-10 md:w-16 md:h-16" />
+            <div className={`font-bold text-primary animate-bounce flex items-center gap-2 sm:gap-4 ${isMobile ? "text-2xl" : "text-3xl sm:text-4xl md:text-6xl"}`}>
+              <PartyPopper className={isMobile ? "w-6 h-6" : "w-8 h-8 sm:w-10 sm:h-10 md:w-16 md:h-16"} />
               {celebration}
-              <PartyPopper className="w-8 h-8 sm:w-10 sm:h-10 md:w-16 md:h-16" />
+              <PartyPopper className={isMobile ? "w-6 h-6" : "w-8 h-8 sm:w-10 sm:h-10 md:w-16 md:h-16"} />
             </div>
           </div>
         )}
 
-        {/* Horizontal scroll container for entire content */}
-        <div className="flex gap-6 min-w-[2900px]">
-          {/* Main Planner Table */}
-          <Card className="shadow-2xl border-primary/20 w-[2400px] flex-shrink-0">
+        {/* Mobile: Tabs for Days */}
+        {isMobile ? (
+          <div className="space-y-4">
+            <Tabs value={selectedDay} onValueChange={setSelectedDay} className="w-full">
+              <TabsList className="grid grid-cols-4 w-full mb-4">
+                {DAYS.slice(0, 4).map((day) => (
+                  <TabsTrigger key={day} value={day} className="text-xs">
+                    {day.substring(0, 3)}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              <TabsList className="grid grid-cols-3 w-full mb-4">
+                {DAYS.slice(4, 7).map((day) => (
+                  <TabsTrigger key={day} value={day} className="text-xs">
+                    {day.substring(0, 3)}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              
+              {DAYS.map((day) => (
+                <TabsContent key={day} value={day} className="space-y-3">
+                  {weekData.roles.map((role, roleIndex) => (
+                    <Card key={roleIndex} className={`p-3 ${
+                      role.isPriority 
+                        ? 'bg-gradient-to-r from-primary/40 via-secondary/35 to-accent/40 border-primary border-2' 
+                        : ''
+                    }`}>
+                      <div className="space-y-2">
+                        <div className="flex items-start gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => toggleRolePriority(roleIndex)}
+                            className={`h-6 w-6 flex-shrink-0 ${
+                              role.isPriority ? 'text-primary' : 'text-muted-foreground'
+                            }`}
+                          >
+                            <Star className={`w-4 h-4 ${role.isPriority ? 'fill-current' : ''}`} />
+                          </Button>
+                          <div className="flex-1">
+                            <Textarea
+                              value={role.name}
+                              onChange={(e) => updateRole(roleIndex, "name", e.target.value)}
+                              placeholder={`Role ${roleIndex + 1}`}
+                              className="text-sm font-semibold mb-1"
+                            />
+                            <Textarea
+                              value={role.goal}
+                              onChange={(e) => updateRole(roleIndex, "goal", e.target.value)}
+                              placeholder="Weekly goal..."
+                              className="text-xs text-muted-foreground"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-1 mt-2">
+                          {weekData.tasks
+                            .filter((task) => task.roleIndex === roleIndex && task.day === day)
+                            .map((task) => (
+                              <div 
+                                key={task.id} 
+                                className={`flex items-start gap-2 p-2 rounded ${
+                                  task.isPinned ? 'border-2 border-accent bg-accent/40 dark:bg-accent/60' : 'bg-card/50'
+                                }`}
+                              >
+                                <Checkbox
+                                  checked={task.completed}
+                                  onCheckedChange={() => toggleTask(task.id)}
+                                  className="mt-1"
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => toggleTaskPin(task.id, day)}
+                                  className={`h-5 w-5 flex-shrink-0 ${
+                                    task.isPinned ? 'text-accent-foreground' : 'text-muted-foreground/50'
+                                  }`}
+                                >
+                                  <Pin className={`w-3 h-3 ${task.isPinned ? 'fill-current' : ''}`} />
+                                </Button>
+                                <Textarea
+                                  value={task.text}
+                                  onChange={(e) => updateTask(task.id, e.target.value)}
+                                  placeholder="Task..."
+                                  className={`flex-1 text-xs ${task.completed ? 'line-through opacity-60' : ''}`}
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  onClick={() => deleteTask(task.id)}
+                                >
+                                  <span className="text-xs">×</span>
+                                </Button>
+                              </div>
+                            ))}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => addTask(roleIndex, day)}
+                            className="w-full text-xs"
+                          >
+                            + Add task
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </TabsContent>
+              ))}
+            </Tabs>
+            
+            {/* Mobile Weekly Reflection */}
+            <Card className="p-4 mt-6">
+              <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Weekly Reflection
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold mb-2">
+                    Which goals did you achieve this week?
+                  </label>
+                  <Textarea
+                    value={weekData.reflectionGoalsAchieved || ''}
+                    onChange={(e) => updateReflection('reflectionGoalsAchieved', e.target.value)}
+                    placeholder="Reflect on your achievements..."
+                    className="min-h-[80px] text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-2">
+                    What challenges did you face?
+                  </label>
+                  <Textarea
+                    value={weekData.reflectionChallengesFaced || ''}
+                    onChange={(e) => updateReflection('reflectionChallengesFaced', e.target.value)}
+                    placeholder="Think about the obstacles..."
+                    className="min-h-[80px] text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-2">
+                    What decisions did you make?
+                  </label>
+                  <Textarea
+                    value={weekData.reflectionDecisionsMade || ''}
+                    onChange={(e) => updateReflection('reflectionDecisionsMade', e.target.value)}
+                    placeholder="Consider your decision-making..."
+                    className="min-h-[80px] text-sm"
+                  />
+                </div>
+              </div>
+            </Card>
+          </div>
+        ) : (
+          /* Desktop: Horizontal scroll container */
+          <div className="flex gap-6 min-w-[2900px]">
+            {/* Main Planner Table */}
+            <Card className="shadow-2xl border-primary/20 w-[2400px] flex-shrink-0">
               <div className="grid grid-cols-61 gap-0 border-b border-border/50">
                 <div className="col-span-6 p-2 sm:p-3 bg-primary/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
                   Role
@@ -857,6 +1090,7 @@ export default function WeeklyPlanner({
               </div>
             </Card>
           </div>
+        )}
       </div>
     </div>
   );
