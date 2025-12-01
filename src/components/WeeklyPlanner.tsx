@@ -830,22 +830,22 @@ export default function WeeklyPlanner({
                                 </Button>
                                 {editingTaskId === task.id ? (
                                   <>
-                                    <input
-                                      type="text"
+                                    <Textarea
                                       value={editingTaskText}
                                       onChange={(e) => setEditingTaskText(e.target.value)}
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') confirmEditTask();
-                                        if (e.key === 'Escape') cancelEditTask();
-                                      }}
                                       placeholder="Task..."
-                                      className="flex-1 text-xs bg-background border rounded px-2 py-1"
+                                      className="flex-1 text-xs bg-background border rounded px-2 py-1 min-h-[32px] resize-none"
                                       autoFocus
+                                      rows={1}
+                                      onInput={(e) => {
+                                        e.currentTarget.style.height = 'auto';
+                                        e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
+                                      }}
                                     />
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-6 w-6 text-green-600"
+                                      className="h-8 w-8 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
                                       onClick={confirmEditTask}
                                     >
                                       <Check className="h-4 w-4" />
@@ -853,7 +853,7 @@ export default function WeeklyPlanner({
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-6 w-6 text-red-600"
+                                      className="h-8 w-8 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
                                       onClick={cancelEditTask}
                                     >
                                       <X className="h-4 w-4" />
@@ -883,22 +883,22 @@ export default function WeeklyPlanner({
                             ))}
                           {newTaskInput?.roleIndex === roleIndex && newTaskInput?.day === day ? (
                             <div className="flex items-center gap-2 p-2 rounded bg-card/50">
-                              <input
-                                type="text"
+                              <Textarea
                                 value={newTaskInput.text}
                                 onChange={(e) => setNewTaskInput({ ...newTaskInput, text: e.target.value })}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') confirmNewTask();
-                                  if (e.key === 'Escape') cancelNewTask();
-                                }}
                                 placeholder="Type your task..."
-                                className="flex-1 text-xs bg-background border rounded px-2 py-1"
+                                className="flex-1 text-xs bg-background border rounded px-2 py-1 min-h-[32px] resize-none"
                                 autoFocus
+                                rows={1}
+                                onInput={(e) => {
+                                  e.currentTarget.style.height = 'auto';
+                                  e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
+                                }}
                               />
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-6 w-6 text-green-600"
+                                className="h-8 w-8 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
                                 onClick={confirmNewTask}
                               >
                                 <Check className="h-4 w-4" />
@@ -906,7 +906,7 @@ export default function WeeklyPlanner({
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-6 w-6 text-red-600"
+                                className="h-8 w-8 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
                                 onClick={cancelNewTask}
                               >
                                 <X className="h-4 w-4" />
@@ -1116,22 +1116,22 @@ export default function WeeklyPlanner({
                               </Button>
                               {editingTaskId === task.id ? (
                                 <>
-                                  <input
-                                    type="text"
+                                  <Textarea
                                     value={editingTaskText}
                                     onChange={(e) => setEditingTaskText(e.target.value)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') confirmEditTask();
-                                      if (e.key === 'Escape') cancelEditTask();
-                                    }}
                                     placeholder="Task..."
-                                    className="flex-1 text-xs bg-background border rounded px-2 py-1"
+                                    className="flex-1 text-xs bg-background border rounded px-2 py-1 min-h-[32px] resize-none"
                                     autoFocus
+                                    rows={1}
+                                    onInput={(e) => {
+                                      e.currentTarget.style.height = 'auto';
+                                      e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
+                                    }}
                                   />
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-6 w-6 text-green-600 flex-shrink-0"
+                                    className="h-8 w-8 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
                                     onClick={confirmEditTask}
                                   >
                                     <Check className="h-4 w-4" />
@@ -1139,7 +1139,7 @@ export default function WeeklyPlanner({
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-6 w-6 text-red-600 flex-shrink-0"
+                                    className="h-8 w-8 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
                                     onClick={cancelEditTask}
                                   >
                                     <X className="h-4 w-4" />
@@ -1169,22 +1169,22 @@ export default function WeeklyPlanner({
                           ))}
                         {newTaskInput?.roleIndex === roleIndex && newTaskInput?.day === day ? (
                           <div className="flex items-center gap-1 sm:gap-2 p-1.5 rounded-md bg-card/50">
-                            <input
-                              type="text"
+                            <Textarea
                               value={newTaskInput.text}
                               onChange={(e) => setNewTaskInput({ ...newTaskInput, text: e.target.value })}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') confirmNewTask();
-                                if (e.key === 'Escape') cancelNewTask();
-                              }}
                               placeholder="Type your task..."
-                              className="flex-1 text-xs bg-background border rounded px-2 py-1 min-h-[32px]"
+                              className="flex-1 text-xs bg-background border rounded px-2 py-1 min-h-[32px] resize-none"
                               autoFocus
+                              rows={1}
+                              onInput={(e) => {
+                                e.currentTarget.style.height = 'auto';
+                                e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
+                              }}
                             />
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 text-green-600 flex-shrink-0"
+                              className="h-8 w-8 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
                               onClick={confirmNewTask}
                             >
                               <Check className="h-4 w-4" />
@@ -1192,7 +1192,7 @@ export default function WeeklyPlanner({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 text-red-600 flex-shrink-0"
+                              className="h-8 w-8 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
                               onClick={cancelNewTask}
                             >
                               <X className="h-4 w-4" />
