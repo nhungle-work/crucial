@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical, Star, Pin, Moon, Sun, Menu } from "lucide-react";
+import { PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical, Star, Pin, Moon, Sun, Menu, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -91,6 +91,9 @@ export default function WeeklyPlanner({
   const [celebration, setCelebration] = useState<string | null>(null);
   const [draggedRoleIndex, setDraggedRoleIndex] = useState<number | null>(null);
   const [selectedDay, setSelectedDay] = useState<string>("Monday");
+  const [newTaskInput, setNewTaskInput] = useState<{ roleIndex: number; day: string; text: string } | null>(null);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editingTaskText, setEditingTaskText] = useState<string>("");
   const isMobile = useIsMobile();
 
   // Load week data from database
@@ -285,14 +288,21 @@ export default function WeeklyPlanner({
     }
   }
 
-  async function addTask(roleIndex: number, day: string) {
-    if (!weekData.plannerId) return;
+  function startNewTask(roleIndex: number, day: string) {
+    setNewTaskInput({ roleIndex, day, text: '' });
+  }
+
+  async function confirmNewTask() {
+    if (!newTaskInput || !weekData.plannerId || !newTaskInput.text.trim()) {
+      setNewTaskInput(null);
+      return;
+    }
 
     const newTaskData = {
       planner_id: weekData.plannerId,
-      role_index: roleIndex,
-      day: day,
-      text: '',
+      role_index: newTaskInput.roleIndex,
+      day: newTaskInput.day,
+      text: newTaskInput.text.trim(),
       completed: false
     };
 
@@ -318,6 +328,33 @@ export default function WeeklyPlanner({
     };
 
     setWeekData({ ...weekData, tasks: [...weekData.tasks, newTask] });
+    setNewTaskInput(null);
+  }
+
+  function cancelNewTask() {
+    setNewTaskInput(null);
+  }
+
+  function startEditTask(taskId: string, currentText: string) {
+    setEditingTaskId(taskId);
+    setEditingTaskText(currentText);
+  }
+
+  async function confirmEditTask() {
+    if (!editingTaskId || !editingTaskText.trim()) {
+      setEditingTaskId(null);
+      setEditingTaskText("");
+      return;
+    }
+
+    await updateTask(editingTaskId, editingTaskText.trim());
+    setEditingTaskId(null);
+    setEditingTaskText("");
+  }
+
+  function cancelEditTask() {
+    setEditingTaskId(null);
+    setEditingTaskText("");
   }
 
   async function updateTask(taskId: string, text: string) {
@@ -791,26 +828,95 @@ export default function WeeklyPlanner({
                                 >
                                   <Pin className={`w-3 h-3 ${task.isPinned ? 'fill-current' : ''}`} />
                                 </Button>
-                                <Textarea
-                                  value={task.text}
-                                  onChange={(e) => updateTask(task.id, e.target.value)}
-                                  placeholder="Task..."
-                                  className={`flex-1 text-xs ${task.completed ? 'line-through opacity-60' : ''}`}
-                                />
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6"
-                                  onClick={() => deleteTask(task.id)}
-                                >
-                                  <span className="text-xs">×</span>
-                                </Button>
+                                {editingTaskId === task.id ? (
+                                  <>
+                                    <input
+                                      type="text"
+                                      value={editingTaskText}
+                                      onChange={(e) => setEditingTaskText(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') confirmEditTask();
+                                        if (e.key === 'Escape') cancelEditTask();
+                                      }}
+                                      placeholder="Task..."
+                                      className="flex-1 text-xs bg-background border rounded px-2 py-1"
+                                      autoFocus
+                                    />
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 text-green-600"
+                                      onClick={confirmEditTask}
+                                    >
+                                      <Check className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 text-red-600"
+                                      onClick={cancelEditTask}
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div
+                                      onClick={() => startEditTask(task.id, task.text)}
+                                      className={`flex-1 text-xs cursor-pointer hover:bg-muted/50 rounded px-2 py-1 ${
+                                        task.completed ? 'line-through opacity-60' : ''
+                                      }`}
+                                    >
+                                      {task.text || 'Click to edit...'}
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6"
+                                      onClick={() => deleteTask(task.id)}
+                                    >
+                                      <span className="text-xs">×</span>
+                                    </Button>
+                                  </>
+                                )}
                               </div>
                             ))}
+                          {newTaskInput?.roleIndex === roleIndex && newTaskInput?.day === day ? (
+                            <div className="flex items-center gap-2 p-2 rounded bg-card/50">
+                              <input
+                                type="text"
+                                value={newTaskInput.text}
+                                onChange={(e) => setNewTaskInput({ ...newTaskInput, text: e.target.value })}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') confirmNewTask();
+                                  if (e.key === 'Escape') cancelNewTask();
+                                }}
+                                placeholder="Type your task..."
+                                className="flex-1 text-xs bg-background border rounded px-2 py-1"
+                                autoFocus
+                              />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-green-600"
+                                onClick={confirmNewTask}
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-red-600"
+                                onClick={cancelNewTask}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : null}
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => addTask(roleIndex, day)}
+                            onClick={() => startNewTask(roleIndex, day)}
                             className="w-full text-xs"
                           >
                             + Add task
@@ -1008,32 +1114,95 @@ export default function WeeklyPlanner({
                               >
                                 <Pin className={`w-3 h-3 transition-transform duration-300 ${task.isPinned ? 'fill-current scale-125 rotate-12' : ''}`} />
                               </Button>
-                              <Textarea
-                                value={task.text}
-                                onChange={(e) => updateTask(task.id, e.target.value)}
-                                placeholder="Task..."
-                                className={`flex-1 text-xs bg-card/50 resize-none whitespace-normal break-words ${task.completed ? 'line-through opacity-60' : ''}`}
-                                style={{ minHeight: '32px', overflow: 'hidden' }}
-                                onInput={(e) => {
-                                  const target = e.target as HTMLTextAreaElement;
-                                  target.style.height = 'auto';
-                                  target.style.height = target.scrollHeight + 'px';
-                                }}
-                              />
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 flex-shrink-0 opacity-0 group-hover/task:opacity-100 transition-opacity"
-                                onClick={() => deleteTask(task.id)}
-                              >
-                                <span className="text-xs">×</span>
-                              </Button>
+                              {editingTaskId === task.id ? (
+                                <>
+                                  <input
+                                    type="text"
+                                    value={editingTaskText}
+                                    onChange={(e) => setEditingTaskText(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') confirmEditTask();
+                                      if (e.key === 'Escape') cancelEditTask();
+                                    }}
+                                    placeholder="Task..."
+                                    className="flex-1 text-xs bg-background border rounded px-2 py-1"
+                                    autoFocus
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 text-green-600 flex-shrink-0"
+                                    onClick={confirmEditTask}
+                                  >
+                                    <Check className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 text-red-600 flex-shrink-0"
+                                    onClick={cancelEditTask}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              ) : (
+                                <>
+                                  <div
+                                    onClick={() => startEditTask(task.id, task.text)}
+                                    className={`flex-1 text-xs cursor-pointer hover:bg-muted/50 rounded px-2 py-1 min-h-[32px] flex items-center ${
+                                      task.completed ? 'line-through opacity-60' : ''
+                                    }`}
+                                  >
+                                    {task.text || 'Click to edit...'}
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 flex-shrink-0 opacity-0 group-hover/task:opacity-100 transition-opacity"
+                                    onClick={() => deleteTask(task.id)}
+                                  >
+                                    <span className="text-xs">×</span>
+                                  </Button>
+                                </>
+                              )}
                             </div>
                           ))}
+                        {newTaskInput?.roleIndex === roleIndex && newTaskInput?.day === day ? (
+                          <div className="flex items-center gap-1 sm:gap-2 p-1.5 rounded-md bg-card/50">
+                            <input
+                              type="text"
+                              value={newTaskInput.text}
+                              onChange={(e) => setNewTaskInput({ ...newTaskInput, text: e.target.value })}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') confirmNewTask();
+                                if (e.key === 'Escape') cancelNewTask();
+                              }}
+                              placeholder="Type your task..."
+                              className="flex-1 text-xs bg-background border rounded px-2 py-1 min-h-[32px]"
+                              autoFocus
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-green-600 flex-shrink-0"
+                              onClick={confirmNewTask}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-red-600 flex-shrink-0"
+                              onClick={cancelNewTask}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : null}
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => addTask(roleIndex, day)}
+                          onClick={() => startNewTask(roleIndex, day)}
                           className="w-full text-xs text-muted-foreground hover:text-foreground"
                         >
                           + Add task
