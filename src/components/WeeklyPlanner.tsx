@@ -845,18 +845,18 @@ export default function WeeklyPlanner({
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-8 w-8 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
+                                      className="h-6 w-6 p-0 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
                                       onClick={confirmEditTask}
                                     >
-                                      <Check className="h-4 w-4" />
+                                      <Check className="h-3.5 w-3.5" />
                                     </Button>
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-8 w-8 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
+                                      className="h-6 w-6 p-0 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
                                       onClick={cancelEditTask}
                                     >
-                                      <X className="h-4 w-4" />
+                                      <X className="h-3.5 w-3.5" />
                                     </Button>
                                   </>
                                 ) : (
@@ -898,18 +898,18 @@ export default function WeeklyPlanner({
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
+                                className="h-6 w-6 p-0 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
                                 onClick={confirmNewTask}
                               >
-                                <Check className="h-4 w-4" />
+                                <Check className="h-3.5 w-3.5" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
+                                className="h-6 w-6 p-0 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
                                 onClick={cancelNewTask}
                               >
-                                <X className="h-4 w-4" />
+                                <X className="h-3.5 w-3.5" />
                               </Button>
                             </div>
                           ) : null}
@@ -1131,18 +1131,18 @@ export default function WeeklyPlanner({
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
+                                    className="h-6 w-6 p-0 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
                                     onClick={confirmEditTask}
                                   >
-                                    <Check className="h-4 w-4" />
+                                    <Check className="h-3.5 w-3.5" />
                                   </Button>
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
+                                    className="h-6 w-6 p-0 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
                                     onClick={cancelEditTask}
                                   >
-                                    <X className="h-4 w-4" />
+                                    <X className="h-3.5 w-3.5" />
                                   </Button>
                                 </>
                               ) : (
@@ -1184,18 +1184,18 @@ export default function WeeklyPlanner({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
+                              className="h-6 w-6 p-0 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
                               onClick={confirmNewTask}
                             >
-                              <Check className="h-4 w-4" />
+                              <Check className="h-3.5 w-3.5" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
+                              className="h-6 w-6 p-0 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
                               onClick={cancelNewTask}
                             >
-                              <X className="h-4 w-4" />
+                              <X className="h-3.5 w-3.5" />
                             </Button>
                           </div>
                         ) : null}
