@@ -845,18 +845,18 @@ export default function WeeklyPlanner({
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-6 w-6 p-0 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
+                                      className="h-5 w-5 p-0 ml-1 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
                                       onClick={confirmEditTask}
                                     >
-                                      <Check className="h-3.5 w-3.5" />
+                                      <Check className="h-3 w-3" />
                                     </Button>
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-6 w-6 p-0 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
+                                      className="h-5 w-5 p-0 ml-0.5 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
                                       onClick={cancelEditTask}
                                     >
-                                      <X className="h-3.5 w-3.5" />
+                                      <X className="h-3 w-3" />
                                     </Button>
                                   </>
                                 ) : (
@@ -882,7 +882,7 @@ export default function WeeklyPlanner({
                               </div>
                             ))}
                           {newTaskInput?.roleIndex === roleIndex && newTaskInput?.day === day ? (
-                            <div className="flex items-center gap-2 p-2 rounded bg-card/50">
+                            <div className="flex items-center gap-0 p-2 rounded bg-card/50">
                               <Textarea
                                 value={newTaskInput.text}
                                 onChange={(e) => setNewTaskInput({ ...newTaskInput, text: e.target.value })}
@@ -898,18 +898,18 @@ export default function WeeklyPlanner({
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-6 w-6 p-0 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
+                                className="h-5 w-5 p-0 ml-1 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
                                 onClick={confirmNewTask}
                               >
-                                <Check className="h-3.5 w-3.5" />
+                                <Check className="h-3 w-3" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-6 w-6 p-0 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
+                                className="h-5 w-5 p-0 ml-0.5 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
                                 onClick={cancelNewTask}
                               >
-                                <X className="h-3.5 w-3.5" />
+                                <X className="h-3 w-3" />
                               </Button>
                             </div>
                           ) : null}
@@ -1131,18 +1131,18 @@ export default function WeeklyPlanner({
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-6 w-6 p-0 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
+                                    className="h-5 w-5 p-0 ml-1 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
                                     onClick={confirmEditTask}
                                   >
-                                    <Check className="h-3.5 w-3.5" />
+                                    <Check className="h-3 w-3" />
                                   </Button>
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-6 w-6 p-0 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
+                                    className="h-5 w-5 p-0 ml-0.5 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
                                     onClick={cancelEditTask}
                                   >
-                                    <X className="h-3.5 w-3.5" />
+                                    <X className="h-3 w-3" />
                                   </Button>
                                 </>
                               ) : (
@@ -1168,7 +1168,7 @@ export default function WeeklyPlanner({
                             </div>
                           ))}
                         {newTaskInput?.roleIndex === roleIndex && newTaskInput?.day === day ? (
-                          <div className="flex items-center gap-1 sm:gap-2 p-1.5 rounded-md bg-card/50">
+                          <div className="flex items-center gap-0 p-1.5 rounded-md bg-card/50">
                             <Textarea
                               value={newTaskInput.text}
                               onChange={(e) => setNewTaskInput({ ...newTaskInput, text: e.target.value })}
@@ -1184,18 +1184,18 @@ export default function WeeklyPlanner({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 p-0 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
+                              className="h-5 w-5 p-0 ml-1 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
                               onClick={confirmNewTask}
                             >
-                              <Check className="h-3.5 w-3.5" />
+                              <Check className="h-3 w-3" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 p-0 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
+                              className="h-5 w-5 p-0 ml-0.5 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
                               onClick={cancelNewTask}
                             >
-                              <X className="h-3.5 w-3.5" />
+                              <X className="h-3 w-3" />
                             </Button>
                           </div>
                         ) : null}
