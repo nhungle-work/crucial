@@ -113,11 +113,12 @@ export default function Auth() {
       }
 
       toast({
-        title: "Account created!",
-        description: "You can now login with your credentials.",
+        title: "Welcome!",
+        description: "Your account has been created successfully.",
       });
       
-      setSignupData({ username: "", email: "", password: "" });
+      // Navigate to main page immediately after signup
+      navigate("/");
     } catch (error) {
       if (error instanceof z.ZodError) {
         const errors: Record<string, string> = {};
@@ -391,7 +392,7 @@ export default function Auth() {
                       required
                     />
                     <p className="text-xs text-muted-foreground">
-                      Email is used for contact and password recovery if you forget
+                      Email is ONLY used for password recovery
                     </p>
                     {signupErrors.email && (
                       <p className="text-sm text-destructive">{signupErrors.email}</p>
