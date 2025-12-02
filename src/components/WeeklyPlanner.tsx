@@ -842,7 +842,7 @@ export default function WeeklyPlanner({
                                         e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
                                       }}
                                     />
-                                    <div className="flex items-center gap-1 ml-auto flex-shrink-0">
+                                    <div className="flex items-center gap-1 ml-1 flex-shrink-0">
                                       <Button
                                         variant="ghost"
                                         size="icon"
@@ -897,7 +897,7 @@ export default function WeeklyPlanner({
                                   e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
                                 }}
                               />
-                              <div className="flex items-center gap-1 ml-auto flex-shrink-0">
+                              <div className="flex items-center gap-1 ml-1 flex-shrink-0">
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -1132,7 +1132,7 @@ export default function WeeklyPlanner({
                                       e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
                                     }}
                                   />
-                                  <div className="flex items-center gap-1 ml-auto flex-shrink-0">
+                                  <div className="flex items-center gap-1 ml-1 flex-shrink-0">
                                     <Button
                                       variant="ghost"
                                       size="icon"
@@ -1187,7 +1187,7 @@ export default function WeeklyPlanner({
                                 e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
                               }}
                             />
-                            <div className="flex items-center gap-1 ml-auto flex-shrink-0">
+                            <div className="flex items-center gap-1 ml-1 flex-shrink-0">
                               <Button
                                 variant="ghost"
                                 size="icon"
