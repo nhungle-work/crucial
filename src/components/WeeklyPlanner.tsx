@@ -142,6 +142,15 @@ export default function WeeklyPlanner({
     return `${start.getDate()}/${start.getMonth() + 1} - ${end.getDate()}/${end.getMonth() + 1}`;
   }
 
+  function getDayDate(dayIndex: number): string {
+    const start = parseLocalDate(currentWeekStart);
+    const dayDate = new Date(start);
+    dayDate.setDate(start.getDate() + dayIndex);
+    const day = String(dayDate.getDate()).padStart(2, '0');
+    const month = String(dayDate.getMonth() + 1).padStart(2, '0');
+    return `${day}/${month}`;
+  }
+
   async function loadWeekData(weekStart: string) {
     try {
       setLoading(true);
@@ -753,16 +762,16 @@ export default function WeeklyPlanner({
           <div className="space-y-4">
             <Tabs value={selectedDay} onValueChange={setSelectedDay} className="w-full">
               <TabsList className="grid grid-cols-4 w-full mb-4">
-                {DAYS.slice(0, 4).map((day) => (
+                {DAYS.slice(0, 4).map((day, index) => (
                   <TabsTrigger key={day} value={day} className="text-xs">
-                    {day.substring(0, 3)}
+                    {day.substring(0, 3)} ({getDayDate(index)})
                   </TabsTrigger>
                 ))}
               </TabsList>
               <TabsList className="grid grid-cols-3 w-full mb-4">
-                {DAYS.slice(4, 7).map((day) => (
+                {DAYS.slice(4, 7).map((day, index) => (
                   <TabsTrigger key={day} value={day} className="text-xs">
-                    {day.substring(0, 3)}
+                    {day.substring(0, 3)} ({getDayDate(index + 4)})
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -990,12 +999,12 @@ export default function WeeklyPlanner({
                 <div className="col-span-5 p-2 sm:p-3 bg-accent/5 font-semibold text-xs sm:text-sm text-center border-r border-border/50">
                   Notes
                 </div>
-                {DAYS.map((day) => (
+                {DAYS.map((day, index) => (
                   <div
                     key={day}
                     className="col-span-6 p-2 sm:p-3 bg-muted/30 font-semibold text-xs sm:text-sm text-center border-r border-border/50"
                   >
-                    {day}
+                    {day} ({getDayDate(index)})
                   </div>
                 ))}
               </div>
