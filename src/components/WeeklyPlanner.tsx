@@ -842,22 +842,24 @@ export default function WeeklyPlanner({
                                         e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
                                       }}
                                     />
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-5 w-5 p-0 ml-1 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
-                                      onClick={confirmEditTask}
-                                    >
-                                      <Check className="h-3 w-3" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-5 w-5 p-0 ml-0.5 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
-                                      onClick={cancelEditTask}
-                                    >
-                                      <X className="h-3 w-3" />
-                                    </Button>
+                                    <div className="flex items-center gap-0 ml-auto flex-shrink-0">
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-4 w-4 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
+                                        onClick={confirmEditTask}
+                                      >
+                                        <Check className="h-2.5 w-2.5" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-4 w-4 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
+                                        onClick={cancelEditTask}
+                                      >
+                                        <X className="h-2.5 w-2.5" />
+                                      </Button>
+                                    </div>
                                   </>
                                 ) : (
                                   <>
@@ -895,22 +897,24 @@ export default function WeeklyPlanner({
                                   e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
                                 }}
                               />
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-5 w-5 p-0 ml-1 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
-                                onClick={confirmNewTask}
-                              >
-                                <Check className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-5 w-5 p-0 ml-0.5 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
-                                onClick={cancelNewTask}
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
+                              <div className="flex items-center gap-0 ml-auto flex-shrink-0">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-4 w-4 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
+                                  onClick={confirmNewTask}
+                                >
+                                  <Check className="h-2.5 w-2.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-4 w-4 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
+                                  onClick={cancelNewTask}
+                                >
+                                  <X className="h-2.5 w-2.5" />
+                                </Button>
+                              </div>
                             </div>
                           ) : null}
                           <Button
@@ -1128,22 +1132,24 @@ export default function WeeklyPlanner({
                                       e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
                                     }}
                                   />
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-5 w-5 p-0 ml-1 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
-                                    onClick={confirmEditTask}
-                                  >
-                                    <Check className="h-3 w-3" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-5 w-5 p-0 ml-0.5 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
-                                    onClick={cancelEditTask}
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </Button>
+                                  <div className="flex items-center gap-0 ml-auto flex-shrink-0">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-4 w-4 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
+                                      onClick={confirmEditTask}
+                                    >
+                                      <Check className="h-2.5 w-2.5" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-4 w-4 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
+                                      onClick={cancelEditTask}
+                                    >
+                                      <X className="h-2.5 w-2.5" />
+                                    </Button>
+                                  </div>
                                 </>
                               ) : (
                                 <>
@@ -1181,22 +1187,24 @@ export default function WeeklyPlanner({
                                 e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
                               }}
                             />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5 p-0 ml-1 text-green-600 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900"
-                              onClick={confirmNewTask}
-                            >
-                              <Check className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5 p-0 ml-0.5 text-red-600 flex-shrink-0 hover:bg-red-100 dark:hover:bg-red-900"
-                              onClick={cancelNewTask}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
+                            <div className="flex items-center gap-0 ml-auto flex-shrink-0">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-4 w-4 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
+                                onClick={confirmNewTask}
+                              >
+                                <Check className="h-2.5 w-2.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-4 w-4 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
+                                onClick={cancelNewTask}
+                              >
+                                <X className="h-2.5 w-2.5" />
+                              </Button>
+                            </div>
                           </div>
                         ) : null}
                         <Button
