@@ -94,6 +94,13 @@ export default function WeeklyPlanner({
   const [newTaskInput, setNewTaskInput] = useState<{ roleIndex: number; day: string; text: string } | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTaskText, setEditingTaskText] = useState<string>("");
+  
+  // Editing states for Role, Goal, Note
+  const [editingField, setEditingField] = useState<{ roleIndex: number; field: 'name' | 'goal' | 'note'; value: string } | null>(null);
+  
+  // Editing states for Weekly Reflection
+  const [editingReflection, setEditingReflection] = useState<{ field: 'reflectionGoalsAchieved' | 'reflectionChallengesFaced' | 'reflectionDecisionsMade'; value: string } | null>(null);
+  
   const isMobile = useIsMobile();
 
   // Load week data from database
@@ -295,6 +302,38 @@ export default function WeeklyPlanner({
       console.error('Error updating role:', error);
       toast.error("Failed to update role");
     }
+  }
+
+  // Functions for editing Role/Goal/Note fields
+  function startEditField(roleIndex: number, field: 'name' | 'goal' | 'note') {
+    const currentValue = weekData.roles[roleIndex][field];
+    setEditingField({ roleIndex, field, value: currentValue });
+  }
+
+  async function confirmEditField() {
+    if (!editingField) return;
+    await updateRole(editingField.roleIndex, editingField.field, editingField.value);
+    setEditingField(null);
+  }
+
+  function cancelEditField() {
+    setEditingField(null);
+  }
+
+  // Functions for editing Reflection fields
+  function startEditReflection(field: 'reflectionGoalsAchieved' | 'reflectionChallengesFaced' | 'reflectionDecisionsMade') {
+    const currentValue = weekData[field] || '';
+    setEditingReflection({ field, value: currentValue });
+  }
+
+  async function confirmEditReflection() {
+    if (!editingReflection) return;
+    await updateReflection(editingReflection.field, editingReflection.value);
+    setEditingReflection(null);
+  }
+
+  function cancelEditReflection() {
+    setEditingReflection(null);
   }
 
   function startNewTask(roleIndex: number, day: string) {
@@ -1042,18 +1081,50 @@ export default function WeeklyPlanner({
                       <div className="opacity-0 group-hover:opacity-100 transition-opacity cursor-move pt-2">
                         <GripVertical className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
                       </div>
-                      <Textarea
-                        value={role.name}
-                        onChange={(e) => updateRole(roleIndex, "name", e.target.value)}
-                        placeholder={`Role ${roleIndex + 1}`}
-                        className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
-                        style={{ minHeight: '48px', overflow: 'hidden' }}
-                        onInput={(e) => {
-                          const target = e.target as HTMLTextAreaElement;
-                          target.style.height = 'auto';
-                          target.style.height = target.scrollHeight + 'px';
-                        }}
-                      />
+                      {editingField?.roleIndex === roleIndex && editingField?.field === 'name' ? (
+                        <div className="flex items-start gap-1 flex-1">
+                          <Textarea
+                            value={editingField.value}
+                            onChange={(e) => setEditingField({ ...editingField, value: e.target.value })}
+                            placeholder={`Role ${roleIndex + 1}`}
+                            className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
+                            style={{ minHeight: '48px', overflow: 'hidden' }}
+                            autoFocus
+                            onInput={(e) => {
+                              const target = e.target as HTMLTextAreaElement;
+                              target.style.height = 'auto';
+                              target.style.height = target.scrollHeight + 'px';
+                            }}
+                          />
+                          <div className="flex items-center gap-1 ml-1 flex-shrink-0 pt-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
+                              onClick={confirmEditField}
+                            >
+                              <Check className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
+                              onClick={cancelEditField}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => startEditField(roleIndex, 'name')}
+                          className="w-full bg-card/50 border border-border/50 rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50 min-h-[48px] flex items-center"
+                        >
+                          <span className="break-words whitespace-normal text-sm">
+                            {role.name || <span className="text-muted-foreground">Role {roleIndex + 1}</span>}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1061,18 +1132,50 @@ export default function WeeklyPlanner({
                     role.isPriority ? 'bg-secondary/50 dark:bg-secondary/30' : 'bg-card'
                   }`}>
                     <div className="space-y-2">
-                      <Textarea
-                        value={role.goal}
-                        onChange={(e) => updateRole(roleIndex, "goal", e.target.value)}
-                        placeholder="What do you want to achieve?"
-                        className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
-                        style={{ minHeight: '48px', overflow: 'hidden' }}
-                        onInput={(e) => {
-                          const target = e.target as HTMLTextAreaElement;
-                          target.style.height = 'auto';
-                          target.style.height = target.scrollHeight + 'px';
-                        }}
-                      />
+                      {editingField?.roleIndex === roleIndex && editingField?.field === 'goal' ? (
+                        <div className="flex items-start gap-1">
+                          <Textarea
+                            value={editingField.value}
+                            onChange={(e) => setEditingField({ ...editingField, value: e.target.value })}
+                            placeholder="What do you want to achieve?"
+                            className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
+                            style={{ minHeight: '48px', overflow: 'hidden' }}
+                            autoFocus
+                            onInput={(e) => {
+                              const target = e.target as HTMLTextAreaElement;
+                              target.style.height = 'auto';
+                              target.style.height = target.scrollHeight + 'px';
+                            }}
+                          />
+                          <div className="flex items-center gap-1 ml-1 flex-shrink-0 pt-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
+                              onClick={confirmEditField}
+                            >
+                              <Check className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
+                              onClick={cancelEditField}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => startEditField(roleIndex, 'goal')}
+                          className="w-full bg-card/50 border border-border/50 rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50 min-h-[48px] flex items-center"
+                        >
+                          <span className="break-words whitespace-normal text-sm">
+                            {role.goal || <span className="text-muted-foreground">What do you want to achieve?</span>}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1080,18 +1183,50 @@ export default function WeeklyPlanner({
                     role.isPriority ? 'bg-accent/50 dark:bg-accent/30' : 'bg-card'
                   }`}>
                     <div className="space-y-2">
-                      <Textarea
-                        value={role.note}
-                        onChange={(e) => updateRole(roleIndex, "note", e.target.value)}
-                        placeholder="Notes for this role..."
-                        className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
-                        style={{ minHeight: '48px', overflow: 'hidden' }}
-                        onInput={(e) => {
-                          const target = e.target as HTMLTextAreaElement;
-                          target.style.height = 'auto';
-                          target.style.height = target.scrollHeight + 'px';
-                        }}
-                      />
+                      {editingField?.roleIndex === roleIndex && editingField?.field === 'note' ? (
+                        <div className="flex items-start gap-1">
+                          <Textarea
+                            value={editingField.value}
+                            onChange={(e) => setEditingField({ ...editingField, value: e.target.value })}
+                            placeholder="Notes for this role..."
+                            className="w-full bg-card/50 border-border/50 resize-none whitespace-normal break-words"
+                            style={{ minHeight: '48px', overflow: 'hidden' }}
+                            autoFocus
+                            onInput={(e) => {
+                              const target = e.target as HTMLTextAreaElement;
+                              target.style.height = 'auto';
+                              target.style.height = target.scrollHeight + 'px';
+                            }}
+                          />
+                          <div className="flex items-center gap-1 ml-1 flex-shrink-0 pt-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
+                              onClick={confirmEditField}
+                            >
+                              <Check className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
+                              onClick={cancelEditField}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => startEditField(roleIndex, 'note')}
+                          className="w-full bg-card/50 border border-border/50 rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50 min-h-[48px] flex items-center"
+                        >
+                          <span className="break-words whitespace-normal text-sm">
+                            {role.note || <span className="text-muted-foreground">Notes for this role...</span>}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1242,36 +1377,132 @@ export default function WeeklyPlanner({
                   <label className="block text-sm font-semibold mb-2 text-foreground">
                     Which goals did you achieve this week?
                   </label>
-                  <Textarea
-                    value={weekData.reflectionGoalsAchieved || ''}
-                    onChange={(e) => updateReflection('reflectionGoalsAchieved', e.target.value)}
-                    placeholder="Reflect on your achievements..."
-                    className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
-                  />
+                  {editingReflection?.field === 'reflectionGoalsAchieved' ? (
+                    <div className="flex items-start gap-2">
+                      <Textarea
+                        value={editingReflection.value}
+                        onChange={(e) => setEditingReflection({ ...editingReflection, value: e.target.value })}
+                        placeholder="Reflect on your achievements..."
+                        className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
+                        autoFocus
+                      />
+                      <div className="flex flex-col gap-1 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
+                          onClick={confirmEditReflection}
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
+                          onClick={cancelEditReflection}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => startEditReflection('reflectionGoalsAchieved')}
+                      className="w-full min-h-[100px] bg-card/50 border border-border/50 rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50"
+                    >
+                      <span className="text-sm break-words whitespace-pre-wrap">
+                        {weekData.reflectionGoalsAchieved || <span className="text-muted-foreground">Reflect on your achievements...</span>}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-foreground">
                     What challenges did you face?
                   </label>
-                  <Textarea
-                    value={weekData.reflectionChallengesFaced || ''}
-                    onChange={(e) => updateReflection('reflectionChallengesFaced', e.target.value)}
-                    placeholder="Think about the obstacles you encountered..."
-                    className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
-                  />
+                  {editingReflection?.field === 'reflectionChallengesFaced' ? (
+                    <div className="flex items-start gap-2">
+                      <Textarea
+                        value={editingReflection.value}
+                        onChange={(e) => setEditingReflection({ ...editingReflection, value: e.target.value })}
+                        placeholder="Think about the obstacles you encountered..."
+                        className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
+                        autoFocus
+                      />
+                      <div className="flex flex-col gap-1 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
+                          onClick={confirmEditReflection}
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
+                          onClick={cancelEditReflection}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => startEditReflection('reflectionChallengesFaced')}
+                      className="w-full min-h-[100px] bg-card/50 border border-border/50 rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50"
+                    >
+                      <span className="text-sm break-words whitespace-pre-wrap">
+                        {weekData.reflectionChallengesFaced || <span className="text-muted-foreground">Think about the obstacles you encountered...</span>}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-foreground">
                     What decisions did you make? When prioritizing decisions, did you focus on what matters most?
                   </label>
-                  <Textarea
-                    value={weekData.reflectionDecisionsMade || ''}
-                    onChange={(e) => updateReflection('reflectionDecisionsMade', e.target.value)}
-                    placeholder="Consider your decision-making process..."
-                    className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
-                  />
+                  {editingReflection?.field === 'reflectionDecisionsMade' ? (
+                    <div className="flex items-start gap-2">
+                      <Textarea
+                        value={editingReflection.value}
+                        onChange={(e) => setEditingReflection({ ...editingReflection, value: e.target.value })}
+                        placeholder="Consider your decision-making process..."
+                        className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
+                        autoFocus
+                      />
+                      <div className="flex flex-col gap-1 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
+                          onClick={confirmEditReflection}
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
+                          onClick={cancelEditReflection}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => startEditReflection('reflectionDecisionsMade')}
+                      className="w-full min-h-[100px] bg-card/50 border border-border/50 rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50"
+                    >
+                      <span className="text-sm break-words whitespace-pre-wrap">
+                        {weekData.reflectionDecisionsMade || <span className="text-muted-foreground">Consider your decision-making process...</span>}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </Card>
