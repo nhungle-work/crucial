@@ -81,9 +81,16 @@ export default function ResetPassword() {
         });
         setErrors(validationErrors);
       } else {
+        const errorMessage = (error as any)?.message || "";
+        let description = "Failed to reset password. Please try again.";
+        
+        if (errorMessage.includes("same_password") || errorMessage.toLowerCase().includes("different from the old")) {
+          description = "New password must be different from your current password.";
+        }
+        
         toast({
           title: "Error",
-          description: "Failed to reset password. Please try again.",
+          description,
           variant: "destructive",
         });
       }
