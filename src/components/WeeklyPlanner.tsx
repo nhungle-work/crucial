@@ -1299,11 +1299,11 @@ export default function WeeklyPlanner({
                                 <>
                                   <div
                                     onClick={() => startEditTask(task.id, task.text)}
-                                    className={`flex-1 min-w-0 text-xs cursor-pointer hover:bg-muted/50 rounded px-2 py-1 min-h-[32px] flex items-center break-words overflow-hidden ${
+                                    className={`flex-1 min-w-0 text-xs cursor-pointer hover:bg-muted/50 rounded px-2 py-1 min-h-[32px] flex items-center overflow-hidden ${
                                       task.completed ? 'line-through opacity-60' : ''
                                     }`}
                                   >
-                                    <span className="break-all">{task.text || 'Click to edit...'}</span>
+                                    <span className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{task.text || 'Click to edit...'}</span>
                                   </div>
                                   <Button
                                     variant="ghost"
