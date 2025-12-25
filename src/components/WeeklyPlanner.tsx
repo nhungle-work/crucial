@@ -1120,9 +1120,9 @@ export default function WeeklyPlanner({
                       ) : (
                         <div
                           onClick={() => startEditField(roleIndex, 'name')}
-                          className="w-full bg-card/50 border border-border/50 rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50 min-h-[48px] flex items-center"
+                          className="w-full bg-card/50 border border-border/50 rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50 min-h-[48px] flex items-start"
                         >
-                          <span className="block whitespace-pre-wrap break-words text-sm">
+                          <span className="block whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm">
                             {role.name || <span className="text-muted-foreground">Role {roleIndex + 1}</span>}
                           </span>
                         </div>
@@ -1171,9 +1171,9 @@ export default function WeeklyPlanner({
                       ) : (
                         <div
                           onClick={() => startEditField(roleIndex, 'goal')}
-                          className="w-full bg-card/50 border border-border/50 rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50 min-h-[48px] flex items-center"
+                          className="w-full bg-card/50 border border-border/50 rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50 min-h-[48px] flex items-start"
                         >
-                          <span className="block whitespace-pre-wrap break-words text-sm">
+                          <span className="block whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm">
                             {role.goal || <span className="text-muted-foreground">What do you want to achieve?</span>}
                           </span>
                         </div>
@@ -1222,9 +1222,9 @@ export default function WeeklyPlanner({
                       ) : (
                         <div
                           onClick={() => startEditField(roleIndex, 'note')}
-                          className="w-full bg-card/50 border border-border/50 rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50 min-h-[48px] flex items-center"
+                          className="w-full bg-card/50 border border-border/50 rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50 min-h-[48px] flex items-start"
                         >
-                          <span className="block whitespace-pre-wrap break-words text-sm">
+                          <span className="block whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm">
                             {role.note || <span className="text-muted-foreground">Notes for this role...</span>}
                           </span>
                         </div>
