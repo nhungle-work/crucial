@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -102,6 +102,35 @@ export default function WeeklyPlanner({
   const [editingReflection, setEditingReflection] = useState<{ field: 'reflectionGoalsAchieved' | 'reflectionChallengesFaced' | 'reflectionDecisionsMade'; value: string } | null>(null);
   
   const isMobile = useIsMobile();
+  const reflectionRef = useRef<HTMLDivElement>(null);
+  const [showReflectionReminder, setShowReflectionReminder] = useState(false);
+
+  // Weekly Reflection reminder: show on Sat/Sun after 5 min if reflection is empty
+  useEffect(() => {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0 = Sunday, 6 = Saturday
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) return;
+    
+    const timer = setTimeout(() => {
+      const hasContent = weekData.reflectionGoalsAchieved || weekData.reflectionChallengesFaced || weekData.reflectionDecisionsMade;
+      if (!hasContent) {
+        setShowReflectionReminder(true);
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearTimeout(timer);
+  }, [loading]); // run once after data loads
+
+  const scrollToReflection = () => {
+    setShowReflectionReminder(false);
+    if (isMobile) {
+      // On mobile, scroll to the mobile reflection section
+      reflectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      // On desktop, scroll the horizontal container to reveal reflection
+      reflectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+    }
+  };
 
   // Load week data from database
   useEffect(() => {
@@ -984,7 +1013,7 @@ export default function WeeklyPlanner({
             </Tabs>
             
             {/* Mobile Weekly Reflection */}
-            <Card className="p-4 mt-6">
+            <Card ref={isMobile ? reflectionRef : undefined} className="p-4 mt-6">
               <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 Weekly Reflection
               </h2>
@@ -1369,7 +1398,7 @@ export default function WeeklyPlanner({
             </Card>
 
             {/* Weekly Reflection - appears when scrolling right */}
-            <Card className="shadow-2xl border-primary/20 p-6 w-[500px] flex-shrink-0 h-fit">
+            <Card ref={!isMobile ? reflectionRef : undefined} className="shadow-2xl border-primary/20 p-6 w-[500px] flex-shrink-0 h-fit">
               <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 Weekly Reflection
               </h2>
@@ -1511,6 +1540,31 @@ export default function WeeklyPlanner({
           </div>
         )}
       </div>
+
+      {/* Weekly Reflection Reminder Dialog */}
+      {showReflectionReminder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <Card className="max-w-md w-full mx-4 p-6 shadow-2xl border-primary/30 animate-in fade-in zoom-in-95 duration-300">
+            <div className="text-center space-y-4">
+              <div className="text-4xl">📝</div>
+              <h3 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Time to Reflect!
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                It's the weekend — a perfect moment to look back on your week. Take a few minutes to reflect on what you achieved, the challenges you faced, and the decisions you made.
+              </p>
+              <div className="flex flex-col gap-2 pt-2">
+                <Button onClick={scrollToReflection} className="w-full">
+                  ✍️ Fill in Weekly Reflection
+                </Button>
+                <Button variant="ghost" onClick={() => setShowReflectionReminder(false)} className="w-full text-muted-foreground">
+                  Maybe later
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
