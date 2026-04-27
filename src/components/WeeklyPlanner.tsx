@@ -323,7 +323,7 @@ export default function WeeklyPlanner({
     const dbField = dbFieldMap[field] || field;
 
     // Update in database
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('roles')
       .update({ [dbField]: value })
       .eq('planner_id', weekData.plannerId)
