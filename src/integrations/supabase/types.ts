@@ -132,6 +132,7 @@ export type Database = {
           id: string
           reflection_challenges_faced: string | null
           reflection_decisions_made: string | null
+          reflection_do_better_next_week: string | null
           reflection_goals_achieved: string | null
           updated_at: string | null
           user_id: string
@@ -142,6 +143,7 @@ export type Database = {
           id?: string
           reflection_challenges_faced?: string | null
           reflection_decisions_made?: string | null
+          reflection_do_better_next_week?: string | null
           reflection_goals_achieved?: string | null
           updated_at?: string | null
           user_id: string
@@ -152,6 +154,7 @@ export type Database = {
           id?: string
           reflection_challenges_faced?: string | null
           reflection_decisions_made?: string | null
+          reflection_do_better_next_week?: string | null
           reflection_goals_achieved?: string | null
           updated_at?: string | null
           user_id?: string

@@ -42,6 +42,7 @@ interface WeekData {
   reflectionGoalsAchieved?: string;
   reflectionChallengesFaced?: string;
   reflectionDecisionsMade?: string;
+  reflectionDoBetterNextWeek?: string;
 }
 
 interface WeeklyPlannerProps {
@@ -99,7 +100,7 @@ export default function WeeklyPlanner({
   const [editingField, setEditingField] = useState<{ roleIndex: number; field: 'name' | 'goal' | 'note'; value: string } | null>(null);
   
   // Editing states for Weekly Reflection
-  const [editingReflection, setEditingReflection] = useState<{ field: 'reflectionGoalsAchieved' | 'reflectionChallengesFaced' | 'reflectionDecisionsMade'; value: string } | null>(null);
+  const [editingReflection, setEditingReflection] = useState<{ field: 'reflectionGoalsAchieved' | 'reflectionChallengesFaced' | 'reflectionDecisionsMade' | 'reflectionDoBetterNextWeek'; value: string } | null>(null);
   
   const isMobile = useIsMobile();
   const reflectionRef = useRef<HTMLDivElement>(null);
@@ -112,7 +113,7 @@ export default function WeeklyPlanner({
     if (dayOfWeek !== 0 && dayOfWeek !== 6) return;
     
     const timer = setTimeout(() => {
-      const hasContent = weekData.reflectionGoalsAchieved || weekData.reflectionChallengesFaced || weekData.reflectionDecisionsMade;
+      const hasContent = weekData.reflectionGoalsAchieved || weekData.reflectionChallengesFaced || weekData.reflectionDecisionsMade || weekData.reflectionDoBetterNextWeek;
       if (!hasContent) {
         setShowReflectionReminder(true);
       }
@@ -198,9 +199,9 @@ export default function WeeklyPlanner({
       }
 
       // Get or create planner for this week
-      let { data: planner, error: plannerError } = await supabase
+      let { data: planner, error: plannerError } = await (supabase as any)
         .from('weekly_planners')
-        .select('id, reflection_goals_achieved, reflection_challenges_faced, reflection_decisions_made')
+        .select('id, reflection_goals_achieved, reflection_challenges_faced, reflection_decisions_made, reflection_do_better_next_week')
         .eq('user_id', user.id)
         .eq('week_start', weekStart)
         .maybeSingle();
@@ -293,6 +294,7 @@ export default function WeeklyPlanner({
         reflectionGoalsAchieved: planner?.reflection_goals_achieved || '',
         reflectionChallengesFaced: planner?.reflection_challenges_faced || '',
         reflectionDecisionsMade: planner?.reflection_decisions_made || '',
+        reflectionDoBetterNextWeek: planner?.reflection_do_better_next_week || '',
       });
 
     } catch (error) {
@@ -321,7 +323,7 @@ export default function WeeklyPlanner({
     const dbField = dbFieldMap[field] || field;
 
     // Update in database
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('roles')
       .update({ [dbField]: value })
       .eq('planner_id', weekData.plannerId)
@@ -350,7 +352,7 @@ export default function WeeklyPlanner({
   }
 
   // Functions for editing Reflection fields
-  function startEditReflection(field: 'reflectionGoalsAchieved' | 'reflectionChallengesFaced' | 'reflectionDecisionsMade') {
+  function startEditReflection(field: 'reflectionGoalsAchieved' | 'reflectionChallengesFaced' | 'reflectionDecisionsMade' | 'reflectionDoBetterNextWeek') {
     const currentValue = weekData[field] || '';
     setEditingReflection({ field, value: currentValue });
   }
@@ -543,21 +545,22 @@ export default function WeeklyPlanner({
     }
   }
 
-  async function updateReflection(field: 'reflectionGoalsAchieved' | 'reflectionChallengesFaced' | 'reflectionDecisionsMade', value: string) {
+  async function updateReflection(field: 'reflectionGoalsAchieved' | 'reflectionChallengesFaced' | 'reflectionDecisionsMade' | 'reflectionDoBetterNextWeek', value: string) {
     if (!weekData.plannerId) return;
 
     setWeekData({ ...weekData, [field]: value });
 
     // Map field names to database column names
-    const dbFieldMap = {
+    const dbFieldMap: Record<string, string> = {
       'reflectionGoalsAchieved': 'reflection_goals_achieved',
       'reflectionChallengesFaced': 'reflection_challenges_faced',
-      'reflectionDecisionsMade': 'reflection_decisions_made'
+      'reflectionDecisionsMade': 'reflection_decisions_made',
+      'reflectionDoBetterNextWeek': 'reflection_do_better_next_week'
     };
 
     const dbField = dbFieldMap[field];
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('weekly_planners')
       .update({ [dbField]: value })
       .eq('id', weekData.plannerId);
@@ -1020,18 +1023,18 @@ export default function WeeklyPlanner({
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold mb-2">
-                    Which goals did you achieve this week?
+                    Which goals did I achieve this week?
                   </label>
                   <Textarea
                     value={weekData.reflectionGoalsAchieved || ''}
                     onChange={(e) => updateReflection('reflectionGoalsAchieved', e.target.value)}
-                    placeholder="Reflect on your achievements..."
+                    placeholder="Reflect on my achievements..."
                     className="min-h-[80px] text-sm"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-2">
-                    What challenges did you face?
+                    What challenges did I face?
                   </label>
                   <Textarea
                     value={weekData.reflectionChallengesFaced || ''}
@@ -1042,12 +1045,23 @@ export default function WeeklyPlanner({
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-2">
-                    What decisions did you make?
+                    What decisions did I make?
                   </label>
                   <Textarea
                     value={weekData.reflectionDecisionsMade || ''}
                     onChange={(e) => updateReflection('reflectionDecisionsMade', e.target.value)}
-                    placeholder="Consider your decision-making..."
+                    placeholder="Consider my decision-making..."
+                    className="min-h-[80px] text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-2">
+                    How can I do better next week?
+                  </label>
+                  <Textarea
+                    value={weekData.reflectionDoBetterNextWeek || ''}
+                    onChange={(e) => updateReflection('reflectionDoBetterNextWeek', e.target.value)}
+                    placeholder="Plan improvements for next week..."
                     className="min-h-[80px] text-sm"
                   />
                 </div>
@@ -1406,14 +1420,14 @@ export default function WeeklyPlanner({
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-foreground">
-                    Which goals did you achieve this week?
+                    Which goals did I achieve this week?
                   </label>
                   {editingReflection?.field === 'reflectionGoalsAchieved' ? (
                     <div className="flex items-start gap-2">
                       <Textarea
                         value={editingReflection.value}
                         onChange={(e) => setEditingReflection({ ...editingReflection, value: e.target.value })}
-                        placeholder="Reflect on your achievements..."
+                        placeholder="Reflect on my achievements..."
                         className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
                         autoFocus
                       />
@@ -1442,7 +1456,7 @@ export default function WeeklyPlanner({
                       className="w-full min-h-[100px] bg-card/50 border border-border/50 rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50"
                     >
                       <span className="text-sm break-words whitespace-pre-wrap">
-                        {weekData.reflectionGoalsAchieved || <span className="text-muted-foreground">Reflect on your achievements...</span>}
+                        {weekData.reflectionGoalsAchieved || <span className="text-muted-foreground">Reflect on my achievements...</span>}
                       </span>
                     </div>
                   )}
@@ -1450,14 +1464,14 @@ export default function WeeklyPlanner({
 
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-foreground">
-                    What challenges did you face?
+                    What challenges did I face?
                   </label>
                   {editingReflection?.field === 'reflectionChallengesFaced' ? (
                     <div className="flex items-start gap-2">
                       <Textarea
                         value={editingReflection.value}
                         onChange={(e) => setEditingReflection({ ...editingReflection, value: e.target.value })}
-                        placeholder="Think about the obstacles you encountered..."
+                        placeholder="Think about the obstacles I encountered..."
                         className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
                         autoFocus
                       />
@@ -1486,7 +1500,7 @@ export default function WeeklyPlanner({
                       className="w-full min-h-[100px] bg-card/50 border border-border/50 rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50"
                     >
                       <span className="text-sm break-words whitespace-pre-wrap">
-                        {weekData.reflectionChallengesFaced || <span className="text-muted-foreground">Think about the obstacles you encountered...</span>}
+                        {weekData.reflectionChallengesFaced || <span className="text-muted-foreground">Think about the obstacles I encountered...</span>}
                       </span>
                     </div>
                   )}
@@ -1494,14 +1508,14 @@ export default function WeeklyPlanner({
 
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-foreground">
-                    What decisions did you make? When prioritizing decisions, did you focus on what matters most?
+                    What decisions did I make? When prioritizing decisions, did I focus on what matters most?
                   </label>
                   {editingReflection?.field === 'reflectionDecisionsMade' ? (
                     <div className="flex items-start gap-2">
                       <Textarea
                         value={editingReflection.value}
                         onChange={(e) => setEditingReflection({ ...editingReflection, value: e.target.value })}
-                        placeholder="Consider your decision-making process..."
+                        placeholder="Consider my decision-making process..."
                         className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
                         autoFocus
                       />
@@ -1530,7 +1544,51 @@ export default function WeeklyPlanner({
                       className="w-full min-h-[100px] bg-card/50 border border-border/50 rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50"
                     >
                       <span className="text-sm break-words whitespace-pre-wrap">
-                        {weekData.reflectionDecisionsMade || <span className="text-muted-foreground">Consider your decision-making process...</span>}
+                        {weekData.reflectionDecisionsMade || <span className="text-muted-foreground">Consider my decision-making process...</span>}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-foreground">
+                    How can I do better next week?
+                  </label>
+                  {editingReflection?.field === 'reflectionDoBetterNextWeek' ? (
+                    <div className="flex items-start gap-2">
+                      <Textarea
+                        value={editingReflection.value}
+                        onChange={(e) => setEditingReflection({ ...editingReflection, value: e.target.value })}
+                        placeholder="Plan improvements for next week..."
+                        className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
+                        autoFocus
+                      />
+                      <div className="flex flex-col gap-1 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
+                          onClick={confirmEditReflection}
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
+                          onClick={cancelEditReflection}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => startEditReflection('reflectionDoBetterNextWeek')}
+                      className="w-full min-h-[100px] bg-card/50 border border-border/50 rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50"
+                    >
+                      <span className="text-sm break-words whitespace-pre-wrap">
+                        {weekData.reflectionDoBetterNextWeek || <span className="text-muted-foreground">Plan improvements for next week...</span>}
                       </span>
                     </div>
                   )}
