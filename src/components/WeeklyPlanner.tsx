@@ -1023,18 +1023,18 @@ export default function WeeklyPlanner({
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold mb-2">
-                    Which goals did you achieve this week?
+                    Which goals did I achieve this week?
                   </label>
                   <Textarea
                     value={weekData.reflectionGoalsAchieved || ''}
                     onChange={(e) => updateReflection('reflectionGoalsAchieved', e.target.value)}
-                    placeholder="Reflect on your achievements..."
+                    placeholder="Reflect on my achievements..."
                     className="min-h-[80px] text-sm"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-2">
-                    What challenges did you face?
+                    What challenges did I face?
                   </label>
                   <Textarea
                     value={weekData.reflectionChallengesFaced || ''}
@@ -1045,12 +1045,23 @@ export default function WeeklyPlanner({
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-2">
-                    What decisions did you make?
+                    What decisions did I make?
                   </label>
                   <Textarea
                     value={weekData.reflectionDecisionsMade || ''}
                     onChange={(e) => updateReflection('reflectionDecisionsMade', e.target.value)}
-                    placeholder="Consider your decision-making..."
+                    placeholder="Consider my decision-making..."
+                    className="min-h-[80px] text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-2">
+                    How can I do better next week?
+                  </label>
+                  <Textarea
+                    value={weekData.reflectionDoBetterNextWeek || ''}
+                    onChange={(e) => updateReflection('reflectionDoBetterNextWeek', e.target.value)}
+                    placeholder="Plan improvements for next week..."
                     className="min-h-[80px] text-sm"
                   />
                 </div>
