@@ -1420,14 +1420,14 @@ export default function WeeklyPlanner({
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-foreground">
-                    Which goals did you achieve this week?
+                    Which goals did I achieve this week?
                   </label>
                   {editingReflection?.field === 'reflectionGoalsAchieved' ? (
                     <div className="flex items-start gap-2">
                       <Textarea
                         value={editingReflection.value}
                         onChange={(e) => setEditingReflection({ ...editingReflection, value: e.target.value })}
-                        placeholder="Reflect on your achievements..."
+                        placeholder="Reflect on my achievements..."
                         className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
                         autoFocus
                       />
@@ -1456,7 +1456,7 @@ export default function WeeklyPlanner({
                       className="w-full min-h-[100px] bg-card/50 border border-border/50 rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50"
                     >
                       <span className="text-sm break-words whitespace-pre-wrap">
-                        {weekData.reflectionGoalsAchieved || <span className="text-muted-foreground">Reflect on your achievements...</span>}
+                        {weekData.reflectionGoalsAchieved || <span className="text-muted-foreground">Reflect on my achievements...</span>}
                       </span>
                     </div>
                   )}
@@ -1464,14 +1464,14 @@ export default function WeeklyPlanner({
 
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-foreground">
-                    What challenges did you face?
+                    What challenges did I face?
                   </label>
                   {editingReflection?.field === 'reflectionChallengesFaced' ? (
                     <div className="flex items-start gap-2">
                       <Textarea
                         value={editingReflection.value}
                         onChange={(e) => setEditingReflection({ ...editingReflection, value: e.target.value })}
-                        placeholder="Think about the obstacles you encountered..."
+                        placeholder="Think about the obstacles I encountered..."
                         className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
                         autoFocus
                       />
@@ -1500,7 +1500,7 @@ export default function WeeklyPlanner({
                       className="w-full min-h-[100px] bg-card/50 border border-border/50 rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50"
                     >
                       <span className="text-sm break-words whitespace-pre-wrap">
-                        {weekData.reflectionChallengesFaced || <span className="text-muted-foreground">Think about the obstacles you encountered...</span>}
+                        {weekData.reflectionChallengesFaced || <span className="text-muted-foreground">Think about the obstacles I encountered...</span>}
                       </span>
                     </div>
                   )}
@@ -1508,14 +1508,14 @@ export default function WeeklyPlanner({
 
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-foreground">
-                    What decisions did you make? When prioritizing decisions, did you focus on what matters most?
+                    What decisions did I make? When prioritizing decisions, did I focus on what matters most?
                   </label>
                   {editingReflection?.field === 'reflectionDecisionsMade' ? (
                     <div className="flex items-start gap-2">
                       <Textarea
                         value={editingReflection.value}
                         onChange={(e) => setEditingReflection({ ...editingReflection, value: e.target.value })}
-                        placeholder="Consider your decision-making process..."
+                        placeholder="Consider my decision-making process..."
                         className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
                         autoFocus
                       />
@@ -1544,7 +1544,51 @@ export default function WeeklyPlanner({
                       className="w-full min-h-[100px] bg-card/50 border border-border/50 rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50"
                     >
                       <span className="text-sm break-words whitespace-pre-wrap">
-                        {weekData.reflectionDecisionsMade || <span className="text-muted-foreground">Consider your decision-making process...</span>}
+                        {weekData.reflectionDecisionsMade || <span className="text-muted-foreground">Consider my decision-making process...</span>}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-foreground">
+                    How can I do better next week?
+                  </label>
+                  {editingReflection?.field === 'reflectionDoBetterNextWeek' ? (
+                    <div className="flex items-start gap-2">
+                      <Textarea
+                        value={editingReflection.value}
+                        onChange={(e) => setEditingReflection({ ...editingReflection, value: e.target.value })}
+                        placeholder="Plan improvements for next week..."
+                        className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
+                        autoFocus
+                      />
+                      <div className="flex flex-col gap-1 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
+                          onClick={confirmEditReflection}
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
+                          onClick={cancelEditReflection}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => startEditReflection('reflectionDoBetterNextWeek')}
+                      className="w-full min-h-[100px] bg-card/50 border border-border/50 rounded-md px-3 py-2 cursor-pointer hover:bg-muted/50"
+                    >
+                      <span className="text-sm break-words whitespace-pre-wrap">
+                        {weekData.reflectionDoBetterNextWeek || <span className="text-muted-foreground">Plan improvements for next week...</span>}
                       </span>
                     </div>
                   )}
