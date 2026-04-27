@@ -1,0 +1,1 @@
+ALTER TABLE public.weekly_planners ADD COLUMN IF NOT EXISTS reflection_do_better_next_week TEXT;
