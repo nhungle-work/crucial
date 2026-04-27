@@ -42,6 +42,7 @@ interface WeekData {
   reflectionGoalsAchieved?: string;
   reflectionChallengesFaced?: string;
   reflectionDecisionsMade?: string;
+  reflectionDoBetterNextWeek?: string;
 }
 
 interface WeeklyPlannerProps {
@@ -99,7 +100,7 @@ export default function WeeklyPlanner({
   const [editingField, setEditingField] = useState<{ roleIndex: number; field: 'name' | 'goal' | 'note'; value: string } | null>(null);
   
   // Editing states for Weekly Reflection
-  const [editingReflection, setEditingReflection] = useState<{ field: 'reflectionGoalsAchieved' | 'reflectionChallengesFaced' | 'reflectionDecisionsMade'; value: string } | null>(null);
+  const [editingReflection, setEditingReflection] = useState<{ field: 'reflectionGoalsAchieved' | 'reflectionChallengesFaced' | 'reflectionDecisionsMade' | 'reflectionDoBetterNextWeek'; value: string } | null>(null);
   
   const isMobile = useIsMobile();
   const reflectionRef = useRef<HTMLDivElement>(null);
@@ -112,7 +113,7 @@ export default function WeeklyPlanner({
     if (dayOfWeek !== 0 && dayOfWeek !== 6) return;
     
     const timer = setTimeout(() => {
-      const hasContent = weekData.reflectionGoalsAchieved || weekData.reflectionChallengesFaced || weekData.reflectionDecisionsMade;
+      const hasContent = weekData.reflectionGoalsAchieved || weekData.reflectionChallengesFaced || weekData.reflectionDecisionsMade || weekData.reflectionDoBetterNextWeek;
       if (!hasContent) {
         setShowReflectionReminder(true);
       }
@@ -198,9 +199,9 @@ export default function WeeklyPlanner({
       }
 
       // Get or create planner for this week
-      let { data: planner, error: plannerError } = await supabase
+      let { data: planner, error: plannerError } = await (supabase as any)
         .from('weekly_planners')
-        .select('id, reflection_goals_achieved, reflection_challenges_faced, reflection_decisions_made')
+        .select('id, reflection_goals_achieved, reflection_challenges_faced, reflection_decisions_made, reflection_do_better_next_week')
         .eq('user_id', user.id)
         .eq('week_start', weekStart)
         .maybeSingle();
@@ -293,6 +294,7 @@ export default function WeeklyPlanner({
         reflectionGoalsAchieved: planner?.reflection_goals_achieved || '',
         reflectionChallengesFaced: planner?.reflection_challenges_faced || '',
         reflectionDecisionsMade: planner?.reflection_decisions_made || '',
+        reflectionDoBetterNextWeek: planner?.reflection_do_better_next_week || '',
       });
 
     } catch (error) {
@@ -350,7 +352,7 @@ export default function WeeklyPlanner({
   }
 
   // Functions for editing Reflection fields
-  function startEditReflection(field: 'reflectionGoalsAchieved' | 'reflectionChallengesFaced' | 'reflectionDecisionsMade') {
+  function startEditReflection(field: 'reflectionGoalsAchieved' | 'reflectionChallengesFaced' | 'reflectionDecisionsMade' | 'reflectionDoBetterNextWeek') {
     const currentValue = weekData[field] || '';
     setEditingReflection({ field, value: currentValue });
   }
@@ -543,21 +545,22 @@ export default function WeeklyPlanner({
     }
   }
 
-  async function updateReflection(field: 'reflectionGoalsAchieved' | 'reflectionChallengesFaced' | 'reflectionDecisionsMade', value: string) {
+  async function updateReflection(field: 'reflectionGoalsAchieved' | 'reflectionChallengesFaced' | 'reflectionDecisionsMade' | 'reflectionDoBetterNextWeek', value: string) {
     if (!weekData.plannerId) return;
 
     setWeekData({ ...weekData, [field]: value });
 
     // Map field names to database column names
-    const dbFieldMap = {
+    const dbFieldMap: Record<string, string> = {
       'reflectionGoalsAchieved': 'reflection_goals_achieved',
       'reflectionChallengesFaced': 'reflection_challenges_faced',
-      'reflectionDecisionsMade': 'reflection_decisions_made'
+      'reflectionDecisionsMade': 'reflection_decisions_made',
+      'reflectionDoBetterNextWeek': 'reflection_do_better_next_week'
     };
 
     const dbField = dbFieldMap[field];
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('weekly_planners')
       .update({ [dbField]: value })
       .eq('id', weekData.plannerId);
