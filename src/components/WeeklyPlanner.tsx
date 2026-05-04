@@ -1423,7 +1423,7 @@ export default function WeeklyPlanner({
                     Which goals did I achieve this week?
                   </label>
                   {editingReflection?.field === 'reflectionGoalsAchieved' ? (
-                    <div className="flex items-start gap-2">
+                    <div>
                       <Textarea
                         value={editingReflection.value}
                         onChange={(e) => setEditingReflection({ ...editingReflection, value: e.target.value })}
@@ -1431,22 +1431,19 @@ export default function WeeklyPlanner({
                         className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
                         autoFocus
                       />
-                      <div className="flex flex-col gap-1 flex-shrink-0">
+                      <div className="flex justify-end gap-2 mt-1">
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
-                          onClick={confirmEditReflection}
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
+                          variant="outline"
+                          className="h-7 px-3 text-xs"
                           onClick={cancelEditReflection}
                         >
-                          <X className="h-4 w-4" />
+                          Cancel
+                        </Button>
+                        <Button
+                          className="h-7 px-3 text-xs"
+                          onClick={confirmEditReflection}
+                        >
+                          Save
                         </Button>
                       </div>
                     </div>
@@ -1467,7 +1464,7 @@ export default function WeeklyPlanner({
                     What challenges did I face?
                   </label>
                   {editingReflection?.field === 'reflectionChallengesFaced' ? (
-                    <div className="flex items-start gap-2">
+                    <div>
                       <Textarea
                         value={editingReflection.value}
                         onChange={(e) => setEditingReflection({ ...editingReflection, value: e.target.value })}
@@ -1475,22 +1472,19 @@ export default function WeeklyPlanner({
                         className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
                         autoFocus
                       />
-                      <div className="flex flex-col gap-1 flex-shrink-0">
+                      <div className="flex justify-end gap-2 mt-1">
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
-                          onClick={confirmEditReflection}
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
+                          variant="outline"
+                          className="h-7 px-3 text-xs"
                           onClick={cancelEditReflection}
                         >
-                          <X className="h-4 w-4" />
+                          Cancel
+                        </Button>
+                        <Button
+                          className="h-7 px-3 text-xs"
+                          onClick={confirmEditReflection}
+                        >
+                          Save
                         </Button>
                       </div>
                     </div>
@@ -1511,7 +1505,7 @@ export default function WeeklyPlanner({
                     What decisions did I make? When prioritizing decisions, did I focus on what matters most?
                   </label>
                   {editingReflection?.field === 'reflectionDecisionsMade' ? (
-                    <div className="flex items-start gap-2">
+                    <div>
                       <Textarea
                         value={editingReflection.value}
                         onChange={(e) => setEditingReflection({ ...editingReflection, value: e.target.value })}
@@ -1519,22 +1513,19 @@ export default function WeeklyPlanner({
                         className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
                         autoFocus
                       />
-                      <div className="flex flex-col gap-1 flex-shrink-0">
+                      <div className="flex justify-end gap-2 mt-1">
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
-                          onClick={confirmEditReflection}
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
+                          variant="outline"
+                          className="h-7 px-3 text-xs"
                           onClick={cancelEditReflection}
                         >
-                          <X className="h-4 w-4" />
+                          Cancel
+                        </Button>
+                        <Button
+                          className="h-7 px-3 text-xs"
+                          onClick={confirmEditReflection}
+                        >
+                          Save
                         </Button>
                       </div>
                     </div>
@@ -1555,7 +1546,7 @@ export default function WeeklyPlanner({
                     How can I do better next week?
                   </label>
                   {editingReflection?.field === 'reflectionDoBetterNextWeek' ? (
-                    <div className="flex items-start gap-2">
+                    <div>
                       <Textarea
                         value={editingReflection.value}
                         onChange={(e) => setEditingReflection({ ...editingReflection, value: e.target.value })}
@@ -1563,22 +1554,19 @@ export default function WeeklyPlanner({
                         className="w-full min-h-[100px] bg-card/50 border-border/50 resize-none"
                         autoFocus
                       />
-                      <div className="flex flex-col gap-1 flex-shrink-0">
+                      <div className="flex justify-end gap-2 mt-1">
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
-                          onClick={confirmEditReflection}
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
+                          variant="outline"
+                          className="h-7 px-3 text-xs"
                           onClick={cancelEditReflection}
                         >
-                          <X className="h-4 w-4" />
+                          Cancel
+                        </Button>
+                        <Button
+                          className="h-7 px-3 text-xs"
+                          onClick={confirmEditReflection}
+                        >
+                          Save
                         </Button>
                       </div>
                     </div>
