@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical, Star, Pin, Moon, Sun, Menu, Check, X } from "lucide-react";
+import { PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical, Star, Pin, Moon, Sun, Menu } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
