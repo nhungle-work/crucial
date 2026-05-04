@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical, Star, Pin, Moon, Sun, Menu, Check, X } from "lucide-react";
+import { PartyPopper, Calendar, ChevronLeft, ChevronRight, GripVertical, Star, Pin, Moon, Sun, Menu } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -909,12 +909,12 @@ export default function WeeklyPlanner({
                                   <Pin className={`w-3 h-3 ${task.isPinned ? 'fill-current' : ''}`} />
                                 </Button>
                                 {editingTaskId === task.id ? (
-                                  <>
+                                  <div className="flex-1">
                                     <Textarea
                                       value={editingTaskText}
                                       onChange={(e) => setEditingTaskText(e.target.value)}
                                       placeholder="Task..."
-                                      className="flex-1 text-xs bg-background border rounded px-2 py-1 min-h-[32px] resize-none"
+                                      className="w-full text-xs bg-background border rounded px-2 py-1 min-h-[32px] resize-none"
                                       autoFocus
                                       rows={1}
                                       onInput={(e) => {
@@ -922,25 +922,11 @@ export default function WeeklyPlanner({
                                         e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
                                       }}
                                     />
-                                    <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-4 w-4 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
-                                        onClick={confirmEditTask}
-                                      >
-                                        <Check className="h-2.5 w-2.5" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-4 w-4 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
-                                        onClick={cancelEditTask}
-                                      >
-                                        <X className="h-2.5 w-2.5" />
-                                      </Button>
+                                    <div className="flex justify-end gap-2 mt-1">
+                                      <Button variant="outline" className="h-7 px-3 text-xs" onClick={cancelEditTask}>Cancel</Button>
+                                      <Button className="h-7 px-3 text-xs" onClick={confirmEditTask}>Save</Button>
                                     </div>
-                                  </>
+                                  </div>
                                 ) : (
                                   <>
                                     <div
@@ -966,12 +952,12 @@ export default function WeeklyPlanner({
                               </div>
                             ))}
                           {newTaskInput?.roleIndex === roleIndex && newTaskInput?.day === day ? (
-                            <div className="flex items-center gap-0 p-2 rounded bg-card/50">
+                            <div className="p-2 rounded bg-card/50">
                               <Textarea
                                 value={newTaskInput.text}
                                 onChange={(e) => setNewTaskInput({ ...newTaskInput, text: e.target.value })}
                                 placeholder="Type your task..."
-                                className="flex-1 text-xs bg-background border rounded px-2 py-1 min-h-[32px] resize-none"
+                                className="w-full text-xs bg-background border rounded px-2 py-1 min-h-[32px] resize-none"
                                 autoFocus
                                 rows={1}
                                 onInput={(e) => {
@@ -979,23 +965,9 @@ export default function WeeklyPlanner({
                                   e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
                                 }}
                               />
-                              <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-4 w-4 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
-                                  onClick={confirmNewTask}
-                                >
-                                  <Check className="h-2.5 w-2.5" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-4 w-4 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
-                                  onClick={cancelNewTask}
-                                >
-                                  <X className="h-2.5 w-2.5" />
-                                </Button>
+                              <div className="flex justify-end gap-2 mt-1">
+                                <Button variant="outline" className="h-7 px-3 text-xs" onClick={cancelNewTask}>Cancel</Button>
+                                <Button className="h-7 px-3 text-xs" onClick={confirmNewTask}>Save</Button>
                               </div>
                             </div>
                           ) : null}
@@ -1127,7 +1099,7 @@ export default function WeeklyPlanner({
                         <GripVertical className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
                       </div>
                       {editingField?.roleIndex === roleIndex && editingField?.field === 'name' ? (
-                        <div className="flex items-start gap-1 flex-1">
+                        <div className="flex-1">
                           <Textarea
                             value={editingField.value}
                             onChange={(e) => setEditingField({ ...editingField, value: e.target.value })}
@@ -1141,23 +1113,9 @@ export default function WeeklyPlanner({
                               target.style.height = target.scrollHeight + 'px';
                             }}
                           />
-                          <div className="flex items-center gap-1 ml-1 flex-shrink-0 pt-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
-                              onClick={confirmEditField}
-                            >
-                              <Check className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
-                              onClick={cancelEditField}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
+                          <div className="flex justify-end gap-2 mt-1">
+                            <Button variant="outline" className="h-7 px-3 text-xs" onClick={cancelEditField}>Cancel</Button>
+                            <Button className="h-7 px-3 text-xs" onClick={confirmEditField}>Save</Button>
                           </div>
                         </div>
                       ) : (
@@ -1178,7 +1136,7 @@ export default function WeeklyPlanner({
                   }`}>
                     <div className="space-y-2">
                       {editingField?.roleIndex === roleIndex && editingField?.field === 'goal' ? (
-                        <div className="flex items-start gap-1">
+                        <div>
                           <Textarea
                             value={editingField.value}
                             onChange={(e) => setEditingField({ ...editingField, value: e.target.value })}
@@ -1192,23 +1150,9 @@ export default function WeeklyPlanner({
                               target.style.height = target.scrollHeight + 'px';
                             }}
                           />
-                          <div className="flex items-center gap-1 ml-1 flex-shrink-0 pt-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
-                              onClick={confirmEditField}
-                            >
-                              <Check className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
-                              onClick={cancelEditField}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
+                          <div className="flex justify-end gap-2 mt-1">
+                            <Button variant="outline" className="h-7 px-3 text-xs" onClick={cancelEditField}>Cancel</Button>
+                            <Button className="h-7 px-3 text-xs" onClick={confirmEditField}>Save</Button>
                           </div>
                         </div>
                       ) : (
@@ -1229,7 +1173,7 @@ export default function WeeklyPlanner({
                   }`}>
                     <div className="space-y-2">
                       {editingField?.roleIndex === roleIndex && editingField?.field === 'note' ? (
-                        <div className="flex items-start gap-1">
+                        <div>
                           <Textarea
                             value={editingField.value}
                             onChange={(e) => setEditingField({ ...editingField, value: e.target.value })}
@@ -1243,23 +1187,9 @@ export default function WeeklyPlanner({
                               target.style.height = target.scrollHeight + 'px';
                             }}
                           />
-                          <div className="flex items-center gap-1 ml-1 flex-shrink-0 pt-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
-                              onClick={confirmEditField}
-                            >
-                              <Check className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
-                              onClick={cancelEditField}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
+                          <div className="flex justify-end gap-2 mt-1">
+                            <Button variant="outline" className="h-7 px-3 text-xs" onClick={cancelEditField}>Cancel</Button>
+                            <Button className="h-7 px-3 text-xs" onClick={confirmEditField}>Save</Button>
                           </div>
                         </div>
                       ) : (
@@ -1308,12 +1238,12 @@ export default function WeeklyPlanner({
                                 <Pin className={`w-3 h-3 transition-transform duration-300 ${task.isPinned ? 'fill-current scale-125 rotate-12' : ''}`} />
                               </Button>
                               {editingTaskId === task.id ? (
-                                <>
+                                <div className="flex-1">
                                   <Textarea
                                     value={editingTaskText}
                                     onChange={(e) => setEditingTaskText(e.target.value)}
                                     placeholder="Task..."
-                                    className="flex-1 text-xs bg-background border rounded px-2 py-1 min-h-[32px] resize-none"
+                                    className="w-full text-xs bg-background border rounded px-2 py-1 min-h-[32px] resize-none"
                                     autoFocus
                                     rows={1}
                                     onInput={(e) => {
@@ -1321,25 +1251,11 @@ export default function WeeklyPlanner({
                                       e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
                                     }}
                                   />
-                                  <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-4 w-4 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
-                                      onClick={confirmEditTask}
-                                    >
-                                      <Check className="h-2.5 w-2.5" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-4 w-4 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
-                                      onClick={cancelEditTask}
-                                    >
-                                      <X className="h-2.5 w-2.5" />
-                                    </Button>
+                                  <div className="flex justify-end gap-2 mt-1">
+                                    <Button variant="outline" className="h-7 px-3 text-xs" onClick={cancelEditTask}>Cancel</Button>
+                                    <Button className="h-7 px-3 text-xs" onClick={confirmEditTask}>Save</Button>
                                   </div>
-                                </>
+                                </div>
                               ) : (
                                 <>
                                   <div
@@ -1363,12 +1279,12 @@ export default function WeeklyPlanner({
                             </div>
                           ))}
                         {newTaskInput?.roleIndex === roleIndex && newTaskInput?.day === day ? (
-                          <div className="flex items-center gap-0 p-1.5 rounded-md bg-card/50">
+                          <div className="p-1.5 rounded-md bg-card/50">
                             <Textarea
                               value={newTaskInput.text}
                               onChange={(e) => setNewTaskInput({ ...newTaskInput, text: e.target.value })}
                               placeholder="Type your task..."
-                              className="flex-1 text-xs bg-background border rounded px-2 py-1 min-h-[32px] resize-none"
+                              className="w-full text-xs bg-background border rounded px-2 py-1 min-h-[32px] resize-none"
                               autoFocus
                               rows={1}
                               onInput={(e) => {
@@ -1376,23 +1292,9 @@ export default function WeeklyPlanner({
                                 e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
                               }}
                             />
-                            <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-4 w-4 p-0 text-green-600 hover:bg-green-100 dark:hover:bg-green-900"
-                                onClick={confirmNewTask}
-                              >
-                                <Check className="h-2.5 w-2.5" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-4 w-4 p-0 text-red-600 hover:bg-red-100 dark:hover:bg-red-900"
-                                onClick={cancelNewTask}
-                              >
-                                <X className="h-2.5 w-2.5" />
-                              </Button>
+                            <div className="flex justify-end gap-2 mt-1">
+                              <Button variant="outline" className="h-7 px-3 text-xs" onClick={cancelNewTask}>Cancel</Button>
+                              <Button className="h-7 px-3 text-xs" onClick={confirmNewTask}>Save</Button>
                             </div>
                           </div>
                         ) : null}
